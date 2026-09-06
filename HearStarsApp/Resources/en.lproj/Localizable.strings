@@ -1,0 +1,142 @@
+"app.title" = "HEAR THE STARS";
+"common.close" = "Close";
+
+"mode.group" = "Guidance mode";
+"mode.sound" = "Listen";
+"mode.haptic" = "Feel";
+"mode.visual" = "See";
+
+"practice.on" = "Practice";
+"practice.off" = "Live sky";
+"practice.hint" = "Practice uses a fixed evening in Tokyo and works in daytime or cloud.";
+"practice.badge" = "PRACTICE";
+"practice.useSimulator" = "Use preview controls";
+"practice.useDevice" = "Use iPhone";
+
+"location.practiceTokyo" = "Practice sky · Tokyo · Jan 15, 9:00 PM";
+"location.current" = "Current location · calculated on device";
+"location.waiting" = "Location is requested when you begin";
+
+"picker.start" = "Find this star";
+"picker.startPractice" = "Practice with this star";
+"picker.simpleTitle" = "Choose a star";
+"picker.simpleBody" = "Choose one, stop moving, then point your iPhone at the sky.";
+"picker.outputHint" = "Sound and vibration become faster and clearer as you get closer";
+"picker.availableNow" = "Available now";
+"picker.belowNow" = "Below the horizon";
+"picker.starHint" = "Starts finding this star";
+"picker.belowHint" = "This star is not available right now";
+"picker.voiceAvailableNow" = "%1$@. Available to find now.";
+"picker.coordinate" = "%1$@ · altitude %2$.0f°";
+"picker.lowHorizon" = "%1$@ · altitude %2$.0f° · near horizon";
+"picker.belowHorizon" = "Below the horizon · practice only";
+"picker.needsLocation" = "Direction after location permission";
+"picker.voiceNeedsLocation" = "%1$@. Direction will be calculated after location permission.";
+"picker.voiceBelow" = "%1$@. It is below the horizon. Practice is available.";
+"picker.voiceLowHorizon" = "%1$@. %2$@. Altitude %3$.0f degrees. Near the horizon, so discovery may be limited.";
+"picker.voiceVisible" = "%1$@. %2$@. Altitude %3$.0f degrees. Available to find.";
+
+"safety.title" = "Stop before looking up";
+"safety.body" = "Check the ground, traffic, bicycles, and people around you.";
+"safety.notNavigation" = "For stargazing only. Do not use while walking or for navigation.";
+"safety.compactBody" = "Stay still. Check the ground, traffic, bicycles, and people.";
+"safety.compactNotNavigation" = "Never use while walking or for navigation.";
+"safety.minimumBody" = "Stop and check around you. Never use while walking or for navigation.";
+"safety.confirm" = "I am stopped · begin";
+
+"calibration.title" = "Let north settle";
+"calibration.body" = "Move your iPhone slowly in a figure eight, then hold it away from metal.";
+"calibration.interference" = "Cars, magnets, speakers, and steel structures can shift the direction.";
+"calibration.compactBody" = "Move iPhone slowly in a figure eight, away from metal.";
+"calibration.compactInterference" = "Cars, magnets, speakers, and steel can shift the direction.";
+"calibration.locationUnavailable" = "Waiting for location. The fixed practice sky is available without it.";
+"calibration.headingUnavailable" = "Reliable true north is unavailable. Calibrate again or use on-screen practice.";
+"calibration.compactLocationUnavailable" = "Waiting for location. Practice works without it.";
+"calibration.compactHeadingUnavailable" = "Direction unavailable. Try a figure eight away from metal, or practice.";
+"calibration.minimumLocationUnavailable" = "Waiting for location. Practice works without it.";
+"calibration.minimumHeadingUnavailable" = "No reliable north. Try a figure eight away from metal, or use practice.";
+"calibration.activityUnavailable" = "Walking detection is unavailable. Live guidance stays paused; on-screen practice works.";
+"calibration.activityDenied" = "Motion & Fitness access is off or restricted. Live guidance stays paused; on-screen practice works.";
+"calibration.waitingActivityAuthorization" = "Waiting for Motion & Fitness permission. You can use on-screen practice now.";
+"calibration.waitingStationaryConfirmation" = "Waiting to confirm that you are stopped. You can wait or use on-screen practice.";
+"calibration.sensorsUnavailable" = "Waiting for direction sensors. You can wait or use on-screen practice.";
+"calibration.continue" = "Continue";
+"calibration.continueLimited" = "Continue · discovery lock paused";
+
+"accuracy.good" = "Good";
+"accuracy.fair" = "Check";
+"accuracy.needsCalibration" = "Adjust";
+"accuracy.unavailable" = "Waiting";
+"accuracy.value" = "%1$@ ±%2$.0f°";
+
+"finder.pausedMoving" = "Stop moving to resume";
+"finder.waitingSensors" = "Waiting for direction";
+"finder.waitingLocation" = "Waiting for current location";
+"finder.locationDeniedSimple" = "Allow location to find this star";
+"finder.belowHorizonSimple" = "This star is below the horizon right now";
+"finder.calibrateSimple" = "Move your iPhone slowly in a figure eight";
+"finder.followPulse" = "Move toward the faster sound and vibration";
+"finder.soundHapticGuide" = "Guiding with sound and vibration";
+"finder.safetyShort" = "Stay still and check the ground and people around you";
+"finder.locationDenied" = "Location is unavailable · practice still works";
+"finder.headingUnavailable" = "Waiting for reliable true north · calibrate or practice";
+"finder.activityUnavailable" = "Movement safety check unavailable · practice available";
+"finder.activityDenied" = "Motion & Fitness off or restricted · practice available";
+"finder.waitingActivityAuthorization" = "Waiting for Motion & Fitness permission · practice available";
+"finder.waitingStationaryConfirmation" = "Confirming that you are stopped · practice available";
+"finder.calibrationNeeded" = "Direction is approximate · calibrate";
+"finder.errorDetail" = "side %1$.0f° · height %2$.0f° · distance %3$.0f°";
+"finder.voiceStatus" = "%1$@. Side difference %2$.0f degrees. Height difference %3$.0f degrees.";
+"finder.locationFallback" = "Location is unavailable, so on-screen practice is now active.";
+"finder.belowHorizonFallback" = "This star is below the horizon, so practice is now active.";
+"finder.practiceFallbackActivated" = "On-screen practice is now active. Location and true north are not required.";
+"finder.usePracticeFallback" = "Use on-screen practice";
+"finder.usePracticeFallbackHint" = "Uses a fixed Tokyo sky and on-screen direction controls without current location.";
+"finder.lowHorizonWarning" = "Near the horizon, refraction and obstacles reduce certainty. Below 2 degrees, discovery lock stays paused.";
+
+"direction.aligned" = "Hold here";
+"direction.reverse" = "Turn slowly around";
+"direction.left" = "Move left";
+"direction.right" = "Move right";
+"direction.up" = "Move higher";
+"direction.down" = "Move lower";
+"direction.upLeft" = "Move higher and left";
+"direction.upRight" = "Move higher and right";
+"direction.downLeft" = "Move lower and left";
+"direction.downRight" = "Move lower and right";
+
+"discovery.title" = "Star direction captured";
+"discovery.practiceTitle" = "Direction matched";
+"discovery.body" = "Your iPhone now matches the selected star's direction.";
+"discovery.practiceBody" = "This was a fixed practice sky. Try the live sky outdoors when conditions are safe.";
+"discovery.next" = "Choose another star";
+"discovery.constellation" = "See the constellation";
+"discovery.constellationSoon" = "Trace its constellation · later phase";
+"discovery.constellationSoonCompact" = "Constellation tracing · later";
+"discovery.constellationHint" = "Constellation tracing is intentionally not enabled in this five-star prototype.";
+
+"constellation.title" = "Sky radar";
+"constellation.badge" = "GYRO GUIDE";
+"constellation.move" = "Move your iPhone slowly and the constellation moves on screen.";
+"constellation.waiting" = "Preparing the motion sensors";
+"constellation.stopped" = "Stop moving before using this guide.";
+"constellation.accessibility" = "On-screen position guide for %@ and %@";
+"constellation.umi" = "Ursa Minor";
+"constellation.cma" = "Canis Major";
+"constellation.lyr" = "Lyra";
+"constellation.ori" = "Orion";
+
+"compass.north" = "north";
+"compass.northeast" = "northeast";
+"compass.east" = "east";
+"compass.southeast" = "southeast";
+"compass.south" = "south";
+"compass.southwest" = "southwest";
+"compass.west" = "west";
+"compass.northwest" = "northwest";
+
+"star.polaris" = "Polaris";
+"star.sirius" = "Sirius";
+"star.vega" = "Vega";
+"star.betelgeuse" = "Betelgeuse";
+"star.rigel" = "Rigel";

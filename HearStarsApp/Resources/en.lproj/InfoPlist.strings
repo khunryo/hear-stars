@@ -1,0 +1,3 @@
+"CFBundleDisplayName" = "Hear the Stars";
+"NSLocationWhenInUseUsageDescription" = "Your location is used only on this device to calculate where the selected star is in the sky. It is not stored or sent.";
+"NSMotionUsageDescription" = "Motion sensors compare the direction of your iPhone with the star and pause guidance when movement is detected.";

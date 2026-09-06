@@ -1,0 +1,54 @@
+workflows:
+  ios-debug-unsigned:
+    name: Hear the Stars iOS / Unsigned debug build
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'ios-build-*'
+          include: true
+
+    environment:
+      xcode: 26.4
+      vars:
+        XCODE_PROJECT: HearStars.xcodeproj
+        XCODE_SCHEME: HearStars
+
+    scripts:
+      - name: Install XcodeGen
+        script: brew install xcodegen
+
+      - name: Generate Xcode project
+        script: xcodegen generate
+
+      - name: Build unsigned app
+        script: |
+          xcodebuild \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$CM_BUILD_DIR/build/ios/derived" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            build
+
+      - name: Package unsigned IPA for Sideloadly
+        script: |
+          APP_PATH="$(find "$CM_BUILD_DIR/build/ios/derived/Build/Products/Release-iphoneos" -maxdepth 1 -name '*.app' -type d | head -n 1)"
+          test -n "$APP_PATH"
+          OUT_DIR="$CM_BUILD_DIR/build/ios/ipa"
+          mkdir -p "$OUT_DIR/Payload"
+          cp -R "$APP_PATH" "$OUT_DIR/Payload/HearStars.app"
+          cd "$OUT_DIR"
+          zip -qry "HearStars-unsigned.ipa" Payload
+          ls -lh "$OUT_DIR/HearStars-unsigned.ipa"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log

@@ -1,0 +1,142 @@
+"app.title" = "星を聴く";
+"common.close" = "閉じる";
+
+"mode.group" = "案内モード";
+"mode.sound" = "聴く";
+"mode.haptic" = "触れる";
+"mode.visual" = "見る";
+
+"practice.on" = "練習";
+"practice.off" = "今の空";
+"practice.hint" = "練習は東京の固定された夜空を使い、昼や曇天でも利用できます。";
+"practice.badge" = "練習";
+"practice.useSimulator" = "画面で練習する";
+"practice.useDevice" = "iPhoneで探す";
+
+"location.practiceTokyo" = "練習の空・東京・1月15日 21:00";
+"location.current" = "現在地・端末内で計算";
+"location.waiting" = "開始時に位置情報を確認します";
+
+"picker.start" = "この星を探す";
+"picker.startPractice" = "この星で練習する";
+"picker.simpleTitle" = "探したい星を選ぶ";
+"picker.simpleBody" = "星を選んだら、立ち止まってiPhoneを空へ向けます。";
+"picker.outputHint" = "近づくほど、音と振動が速く・はっきりなります";
+"picker.availableNow" = "今探せます";
+"picker.belowNow" = "いまは地平線の下";
+"picker.starHint" = "探索を始めます";
+"picker.belowHint" = "現在は選べません";
+"picker.voiceAvailableNow" = "%1$@。今探せます。";
+"picker.coordinate" = "%1$@・高度 %2$.0f°";
+"picker.lowHorizon" = "%1$@・高度 %2$.0f°・地平線付近";
+"picker.belowHorizon" = "地平線の下・練習のみ";
+"picker.needsLocation" = "位置情報の許可後に方向を表示";
+"picker.voiceNeedsLocation" = "%1$@。位置情報の許可後に方向を計算します。";
+"picker.voiceBelow" = "%1$@。現在は地平線の下です。練習を利用できます。";
+"picker.voiceLowHorizon" = "%1$@。%2$@。高度 %3$.0f 度。地平線に近いため、発見判定が制限されることがあります。";
+"picker.voiceVisible" = "%1$@。%2$@。高度 %3$.0f 度。探すことができます。";
+
+"safety.title" = "立ち止まって空を見上げます";
+"safety.body" = "足元、車、自転車、人を確認してください。";
+"safety.notNavigation" = "星を見るための案内です。歩きながら、または航法には使わないでください。";
+"safety.compactBody" = "立ち止まり、足元、車、自転車、人を確認します。";
+"safety.compactNotNavigation" = "歩きながら、または航法には使いません。";
+"safety.minimumBody" = "立ち止まって周囲を確認します。歩行中や航法には使いません。";
+"safety.confirm" = "立ち止まりました・開始";
+
+"calibration.title" = "北の方向を整えます";
+"calibration.body" = "iPhoneをゆっくり8の字に動かし、金属から離して持ちます。";
+"calibration.interference" = "車内、磁石、スピーカー、鉄骨建物の近くでは方向がずれることがあります。";
+"calibration.compactBody" = "iPhoneを金属から離し、ゆっくり8の字に動かします。";
+"calibration.compactInterference" = "車、磁石、スピーカー、鉄骨の近くでは方向がずれます。";
+"calibration.locationUnavailable" = "現在地を待っています。現在地なしでも固定された空で練習できます。";
+"calibration.headingUnavailable" = "信頼できる真北を取得できません。再補正するか、画面で練習できます。";
+"calibration.compactLocationUnavailable" = "現在地を待っています。現在地なしでも練習できます。";
+"calibration.compactHeadingUnavailable" = "方向を取得できません。金属から離れて8の字に動かすか、画面で練習します。";
+"calibration.minimumLocationUnavailable" = "現在地を待っています。現在地なしでも練習できます。";
+"calibration.minimumHeadingUnavailable" = "真北を取得できません。金属から離れて8の字に動かすか、画面で練習します。";
+"calibration.activityUnavailable" = "歩行検知を利用できません。今の空の案内は停止しますが、画面では練習できます。";
+"calibration.activityDenied" = "「モーションとフィットネス」がオフまたは制限中です。今の空の案内は停止しますが、画面では練習できます。";
+"calibration.waitingActivityAuthorization" = "「モーションとフィットネス」の許可を待っています。画面での練習はすぐに使えます。";
+"calibration.waitingStationaryConfirmation" = "立ち止まっていることを確認しています。待つか、画面で練習できます。";
+"calibration.sensorsUnavailable" = "方向センサーを待っています。待つか、画面で練習できます。";
+"calibration.continue" = "続ける";
+"calibration.continueLimited" = "続ける・発見判定は停止";
+
+"accuracy.good" = "良い";
+"accuracy.fair" = "確認";
+"accuracy.needsCalibration" = "調整が必要";
+"accuracy.unavailable" = "待機中";
+"accuracy.value" = "%1$@ ±%2$.0f°";
+
+"finder.pausedMoving" = "立ち止まると再開します";
+"finder.waitingSensors" = "方向を確認しています";
+"finder.waitingLocation" = "現在地を確認しています";
+"finder.locationDeniedSimple" = "位置情報を許可すると探せます";
+"finder.belowHorizonSimple" = "この星はいま地平線の下です";
+"finder.calibrateSimple" = "iPhoneを8の字にゆっくり動かしてください";
+"finder.followPulse" = "音と振動が速くなる方へ";
+"finder.soundHapticGuide" = "音と振動で案内します";
+"finder.safetyShort" = "立ち止まり、周囲と足元を確認して使ってください";
+"finder.locationDenied" = "現在地を利用できません・練習は利用できます";
+"finder.headingUnavailable" = "信頼できる真北を待っています・補正または練習";
+"finder.activityUnavailable" = "移動の安全確認を利用できません・練習は利用できます";
+"finder.activityDenied" = "モーションとフィットネスがオフまたは制限中・練習は利用できます";
+"finder.waitingActivityAuthorization" = "モーションとフィットネスの許可待ち・練習は利用できます";
+"finder.waitingStationaryConfirmation" = "立ち止まっていることを確認中・練習は利用できます";
+"finder.calibrationNeeded" = "方向はおおよそです・補正してください";
+"finder.errorDetail" = "左右 %1$.0f°・高さ %2$.0f°・距離 %3$.0f°";
+"finder.voiceStatus" = "%1$@。左右差 %2$.0f 度。高さの差 %3$.0f 度。";
+"finder.locationFallback" = "現在地を利用できないため、画面での練習に切り替えました。";
+"finder.belowHorizonFallback" = "この星はいま地平線の下にあるため、練習に切り替えました。";
+"finder.practiceFallbackActivated" = "画面での練習に切り替えました。現在地と真北は使用しません。";
+"finder.usePracticeFallback" = "画面で練習する";
+"finder.usePracticeFallbackHint" = "現在地を使わず、東京の固定された空と画面の方向ボタンで練習します。";
+"finder.lowHorizonWarning" = "地平線付近は大気差や障害物で不確かです。高度2度未満では発見判定を停止します。";
+
+"direction.aligned" = "その向きで保ちます";
+"direction.reverse" = "ゆっくり反対側へ";
+"direction.left" = "左へ";
+"direction.right" = "右へ";
+"direction.up" = "上へ";
+"direction.down" = "下へ";
+"direction.upLeft" = "左上へ";
+"direction.upRight" = "右上へ";
+"direction.downLeft" = "左下へ";
+"direction.downRight" = "右下へ";
+
+"discovery.title" = "星の方向を捉えました";
+"discovery.practiceTitle" = "方向が合いました";
+"discovery.body" = "選んだ星の方向と一致しました。";
+"discovery.practiceBody" = "固定された練習の空です。安全な屋外で、今の空も試してください。";
+"discovery.next" = "次の星を選ぶ";
+"discovery.constellation" = "画面で星座を見る";
+"discovery.constellationSoon" = "星座をたどる・次の段階";
+"discovery.constellationSoonCompact" = "星座をたどる・後日";
+"discovery.constellationHint" = "星座をたどる機能は、5星の技術検証後に追加します。";
+
+"constellation.title" = "空のレーダー";
+"constellation.badge" = "ジャイロガイド";
+"constellation.move" = "iPhoneをゆっくり動かすと、星座も画面の中を動きます";
+"constellation.waiting" = "ジャイロの準備中です";
+"constellation.stopped" = "立ち止まってから使ってください";
+"constellation.accessibility" = "%@と%@の画面上の位置ガイド";
+"constellation.umi" = "こぐま座";
+"constellation.cma" = "おおいぬ座";
+"constellation.lyr" = "こと座";
+"constellation.ori" = "オリオン座";
+
+"compass.north" = "北";
+"compass.northeast" = "北東";
+"compass.east" = "東";
+"compass.southeast" = "南東";
+"compass.south" = "南";
+"compass.southwest" = "南西";
+"compass.west" = "西";
+"compass.northwest" = "北西";
+
+"star.polaris" = "北極星";
+"star.sirius" = "シリウス";
+"star.vega" = "ベガ";
+"star.betelgeuse" = "ベテルギウス";
+"star.rigel" = "リゲル";

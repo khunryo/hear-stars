@@ -1,0 +1,3 @@
+"CFBundleDisplayName" = "星を聴く";
+"NSLocationWhenInUseUsageDescription" = "現在地から選んだ星の方位と高さを端末内で計算するために、使用中のみ位置情報を使います。位置情報は保存・送信しません。";
+"NSMotionUsageDescription" = "iPhoneを向けた方向と星の方向を照合し、移動を検知したとき案内を止めるために、使用中のみモーションセンサーを使います。";
