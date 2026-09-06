@@ -50,13 +50,14 @@
 
 ## 5. IPA・公開・外部サービス
 
-- 最新IPA: なし
-- IPAダウンロードURL: なし
+- 最新IPA: `C:\Users\81906\Downloads\HearStars-unsigned.ipa`（1,257,999 bytes、SHA-256 `44DC4847AF93EDC442BB772E6435C9FEF3201177628298B06B8288971B9CC5E1`）。
+- IPAダウンロードURL: [Codemagic artifact](https://codemagic.io/app/6a9d63cbc05fc950bbe1a262/build/6a9d63e3f6c99238858c4298)（ビルド画面の Artifacts から取得可）。
 - 公開Web URL: なし
 - App Store Connect: アプリレコード未作成、URLなし
 - App Store公開ページ: なし
-- Codemagic: 署名なしIPA用の codemagic.yaml を追加済み。GitHub接続・ビルド実行・具体的ビルドURLは未作成。
-- Sideloadly: 未実施
+- Codemagic: `hear-stars` の `ios-debug-unsigned` が成功（main / `85d7509`、2分4秒）。[ビルド画面](https://codemagic.io/app/6a9d63cbc05fc950bbe1a262/build/6a9d63e3f6c99238858c4298)。
+- GitHub: 公開リポジトリ https://github.com/khunryo/hear-stars 、初回コミット 85d7509 を main へ送信済み。
+- Sideloadly: IPAをダウンロード済み。実機への導入は未実施。
 - 試用用のジャイロWebプレビュー: スレッド専用visualizations領域に hear-stars-gyro-preview.zip を作成。これはIPAではなく、Safariで画面遷移とジャイロUIを確認するための単体HTML。
 
 ## 6. 完了済み・確認結果
@@ -76,15 +77,15 @@
 
 - 簡素化モックは正本フォルダ外のスレッド専用visualizations領域にある。
 - Windows環境のためSwiftUI/Xcodeコンパイル、VoiceOver、音、触覚、Core Motion、実機表示は未確認。
-- Codemagicビルド実行、署名、IPA、実機検証は未完了。
+- CodemagicでのXcodeコンパイルと署名なしIPA作成は成功。Sideloadlyでの再署名・実機検証は未完了。
 - 星データの出典/商用再配布条件は最終確定前。Gaiaは`conditional`、Hipparcos/Tychoは商用不採用、星座線は独自作成方針。詳細な一次資料・クレジット文・台帳様式は`docs/REQUIREMENTS-AND-RIGHTS.md`を正本とする。
-- `C:\dev\fishing\hear-stars` は独立Gitリポジトリだが、全ファイル未追跡・コミットなし。
+- `C:\dev\fishing\hear-stars` は独立Gitリポジトリで、main は初回コミット `85d7509` をGitHubへ送信済み。Hand-off更新は未コミット。
 - 旧Safety/Calibration/Practice/GuidanceModeコードはコンパイル互換のため残っているが、通常導線からは到達しない。Xcode確認後に整理可能。
 
 ## 8. 次の作業（優先順）
 
-1. GitHubへ初回コミット・プッシュし、Codemagicで ios-debug-unsigned を実行してIPAを取得する。
-2. Sideloadlyで実機へ導入し、北極星など現在見える1星で向き、音・振動、移動時停止、0.8秒一致を確認する。
+1. Sideloadlyで `C:\Users\81906\Downloads\HearStars-unsigned.ipa` を実機へ導入し、北極星など現在見える1星で向き、音・振動、移動時停止、0.8秒一致を確認する。
+2. 実機で星を捉えた後、ジャイロ星座画面が端末の向きに追従することを確認する。
 3. 実機OK後に署名付きTestFlight配布を別工程で準備する。
 
 ## 9. 固定運用ルール
@@ -101,6 +102,6 @@
 - この旧チャットのcwd: `C:\Users\81906\.codex\worktrees\6404\fishing`
 - cwd Git状態: detached HEAD、commit `d621d69`、確認時はclean。このアプリの正本ではなく変更していない。
 - 正本予定リポジトリ: `C:\dev\fishing\hear-stars`
-- 正本Git状態: `main`、コミットなし、全成果物が未追跡。
+- 正本Git状態: `main`、初回コミット `85d7509` はGitHubへ送信済み。HANDOFF_CURRENT.mdの更新は未コミット。
 - 最新モックのみスレッド専用visualizations領域。SwiftUIとコア変更は正本予定リポジトリへ反映済み。
 - 並行タスクが同じ正本へ書いた経緯があるため、削除/上書き前に必ず現ファイルを読み、統合する。
