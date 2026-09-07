@@ -13,6 +13,7 @@ final class AppModel: ObservableObject {
     @Published var simulatorEnabled = false
     @Published private(set) var observations: [String: HorizontalCoordinate] = [:]
     @Published private(set) var guidance: GuidanceState?
+    @Published private(set) var directionReadiness: DirectionReadiness = .locating
     @Published private(set) var simulatedAim = DeviceAim(azimuthDegrees: 0, altitudeDegrees: 20)
 
     let sensors = SensorService()
@@ -27,6 +28,7 @@ final class AppModel: ObservableObject {
     private var lastAnnouncedDirection: DirectionCue?
     private var lastAnnouncementAt = Date.distantPast
     private var wasPausedForMotion = false
+    private var preparationStartedAt = ProcessInfo.processInfo.systemUptime
 
     private static let practiceObserver = ObserverLocation(
         latitudeDegrees: 35.6812,
@@ -100,11 +102,14 @@ final class AppModel: ObservableObject {
         haptics.shutdown()
         guidance = nil
         holdTracker.reset()
+        directionReadiness = .checkingDirection
     }
 
     func becomeActive() {
         if route == .calibration || route == .finder || route == .constellation {
+            preparationStartedAt = ProcessInfo.processInfo.systemUptime
             sensors.start(requestLocation: !isPractice)
+            refresh()
         }
     }
 
@@ -128,6 +133,8 @@ final class AppModel: ObservableObject {
         nextPulseAt = .distantPast
         lastAnnouncedBand = nil
         lastAnnouncedDirection = nil
+        preparationStartedAt = ProcessInfo.processInfo.systemUptime
+        directionReadiness = .checkingDirection
         sensors.start(requestLocation: true)
         route = .finder
         refresh()
@@ -174,7 +181,28 @@ final class AppModel: ObservableObject {
         haptics.stop()
         guidance = nil
         holdTracker.reset()
+        wasPausedForMotion = false
         route = .picker
+    }
+
+    func restartFinding() {
+        sensors.stop()
+        startFinding(selectedStar)
+    }
+
+    func retryDirectionSetup() {
+        stopPulses()
+        holdTracker.reset()
+        preparationStartedAt = ProcessInfo.processInfo.systemUptime
+        directionReadiness = .checkingDirection
+        sensors.stop()
+        sensors.start(requestLocation: !isPractice)
+        refresh()
+    }
+
+    func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
     func chooseMode(_ mode: GuidanceMode) {
@@ -208,11 +236,19 @@ final class AppModel: ObservableObject {
     }
 
     func showConstellation() {
+        stopPulses()
+        preparationStartedAt = ProcessInfo.processInfo.systemUptime
+        directionReadiness = .checkingDirection
         sensors.start(requestLocation: !isPractice)
         route = .constellation
+        refresh()
     }
 
     func returnToDiscovery() {
+        sensors.stop()
+        stopPulses()
+        guidance = nil
+        holdTracker.reset()
         route = .discovery
     }
 
@@ -224,6 +260,9 @@ final class AppModel: ObservableObject {
 
     private func refresh() {
         refreshObservations()
+        if route == .finder || route == .constellation {
+            refreshDirectionReadiness()
+        }
         guard route == .finder else {
             guidance = nil
             return
@@ -236,7 +275,7 @@ final class AppModel: ObservableObject {
             return
         }
 
-        if !isPractice && target.altitudeDegrees < 2 {
+        guard directionReadiness.canUseDirection else {
             guidance = nil
             stopPulses()
             holdTracker.reset()
@@ -326,6 +365,35 @@ final class AppModel: ObservableObject {
         })
     }
 
+    private func refreshDirectionReadiness() {
+        let location: DirectionReadiness.LocationState
+        if isPractice {
+            location = .available
+        } else {
+            switch sensors.authorizationStatus {
+            case .notDetermined: location = .permissionRequired
+            case .denied:
+                location = sensors.locationServicesAreEnabled ? .denied : .servicesOff
+            case .restricted: location = .restricted
+            case .authorizedAlways, .authorizedWhenInUse:
+                location = hasUsableLiveLocation ? .available : .waiting
+            @unknown default: location = .restricted
+            }
+        }
+        let state = DirectionReadiness.evaluate(
+            location: location,
+            directionHardwareAvailable: isUsingSimulatedAim || sensors.directionHardwareAvailable,
+            sensorIsFresh: isUsingSimulatedAim || (sensors.motionIsFresh && sensors.aim != nil),
+            headingAccuracyDegrees: isUsingSimulatedAim ? 0 : sensors.effectiveHeadingAccuracyDegrees,
+            targetAltitudeDegrees: selectedObservation?.altitudeDegrees,
+            isMoving: sensors.isUnsafeMotion,
+            preparationHasTimedOut: ProcessInfo.processInfo.systemUptime - preparationStartedAt >= 12
+        )
+        guard state != directionReadiness else { return }
+        directionReadiness = state
+        announce(L10n.string("readiness.\(state.rawValue).title"), force: false)
+    }
+
     private func emitPulseIfNeeded(_ state: GuidanceState) {
         let now = Date()
         guard now >= nextPulseAt else { return }
@@ -353,6 +421,7 @@ final class AppModel: ObservableObject {
         haptics.stop()
         audio.playDiscovery(for: selectedStar)
         haptics.playDiscovery(for: selectedStar)
+        sensors.stop()
         announce(
             L10n.string("discovery.title"),
             force: true

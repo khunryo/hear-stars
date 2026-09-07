@@ -24,6 +24,9 @@ workflows:
       - name: Generate Xcode project
         script: xcodegen generate
 
+      - name: Test astronomy and direction readiness
+        script: swift test
+
       - name: Build unsigned app
         script: |
           xcodebuild \

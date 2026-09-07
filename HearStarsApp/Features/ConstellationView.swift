@@ -5,38 +5,46 @@ import SwiftUI
 struct ConstellationView: View {
     @ObservedObject var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        VStack(spacing: 14) {
-            HStack {
-                Button(action: model.returnToDiscovery) {
-                    Image(systemName: "xmark")
-                        .frame(width: 44, height: 44)
+        GeometryReader { geometry in
+            VStack(spacing: 8) {
+                HStack {
+                    Button(action: model.returnToDiscovery) {
+                        Label("constellation.backToResult", systemImage: "chevron.left")
+                            .font(.subheadline)
+                            .frame(minHeight: 44)
+                    }
+                    Spacer()
+                    Text("constellation.title")
+                        .font(.headline)
                 }
-                .accessibilityLabel(Text("common.close"))
-
-                Spacer()
-                Text("constellation.title")
-                    .font(.headline)
-                Spacer()
-                Color.clear.frame(width: 44, height: 44)
+                if dynamicTypeSize.isAccessibilitySize || geometry.size.height < 660 {
+                    ScrollView { content(fieldHeight: 200) }
+                } else {
+                    content(fieldHeight: nil)
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 14)
+        }
+    }
 
-            Text("constellation.badge")
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 11)
-                .padding(.vertical, 7)
-                .overlay(Capsule().stroke(Color.hsSecondary.opacity(0.5), lineWidth: 0.8))
-                .accessibilityHidden(true)
-
+    private func content(fieldHeight: CGFloat?) -> some View {
+        VStack(spacing: 12) {
+            DirectionStatusView(model: model)
             GeometryReader { geometry in
                 ConstellationField(
                     guide: .forStar(model.selectedStar.id),
-                    offset: pointingOffset(in: geometry.size),
+                    offset: model.directionReadiness.canUseDirection ? pointingOffset(in: geometry.size) : .zero,
                     reduceMotion: reduceMotion
                 )
             }
+            .frame(height: fieldHeight)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .opacity(model.directionReadiness.canUseDirection ? 1 : 0.35)
             .nightPanel()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(accessibilityDescription))
@@ -47,15 +55,15 @@ struct ConstellationView: View {
                 Text(LocalizedStringKey(ConstellationGuide.forStar(model.selectedStar.id).constellationKey))
                     .font(.subheadline)
                     .foregroundStyle(Color.hsSecondary)
-                Text(LocalizedStringKey(statusKey))
+                Text(LocalizedStringKey(model.directionReadiness.canUseDirection ? "constellation.move" : "constellation.paused"))
                     .font(.caption)
                     .foregroundStyle(Color.hsSecondary)
                     .multilineTextAlignment(.center)
             }
             .accessibilityElement(children: .combine)
 
-            Button(action: model.findAnotherStar) {
-                Text("discovery.next")
+            Button(action: model.restartFinding) {
+                Text("discovery.retry")
                     .font(.headline)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .background(
@@ -65,16 +73,10 @@ struct ConstellationView: View {
                     .foregroundStyle(Color.hsNight)
             }
             .buttonStyle(.plain)
+            Button("common.backToStars", action: model.returnToPicker)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 14)
-    }
-
-    private var statusKey: String {
-        if model.sensors.isUnsafeMotion { return "constellation.stopped" }
-        if model.sensors.aim == nil { return "constellation.waiting" }
-        return "constellation.move"
     }
 
     private var accessibilityDescription: String {

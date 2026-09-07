@@ -7,23 +7,45 @@ struct DiscoveryView: View {
     @State private var revealed = false
 
     var body: some View {
-        GeometryReader { geometry in
-            ViewThatFits {
-                if !dynamicTypeSize.isAccessibilitySize && geometry.size.height >= 700 {
-                    regularContent
-                        .padding(24)
-                } else {
+        VStack(spacing: 0) {
+            Button(action: model.returnToPicker) {
+                Label("common.backToStars", systemImage: "chevron.left")
+                    .font(.body.weight(.medium))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.hsText)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
+
+            GeometryReader { geometry in
+                ViewThatFits(in: .vertical) {
+                    if !dynamicTypeSize.isAccessibilitySize && geometry.size.height >= 700 {
+                        regularContent
+                            .padding(24)
+                    } else {
+                        compactContent
+                            .padding(16)
+                    }
+
                     compactContent
                         .padding(16)
+
+                    minimumContent
+                        .padding(12)
+
+                    ScrollView {
+                        minimumContent
+                            .padding(12)
+                            .frame(maxWidth: .infinity)
+                    }
                 }
-
-                compactContent
-                    .padding(16)
-
-                minimumContent
-                    .padding(12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear {
             if reduceMotion {
@@ -118,8 +140,11 @@ struct DiscoveryView: View {
         VStack(spacing: 10) {
             Button(action: model.showConstellation) {
                 Text("discovery.constellation")
-                    .font(compact ? .caption.weight(.semibold) : .headline)
+                    .font(compact ? .subheadline.weight(.semibold) : .headline)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
                     .frame(maxWidth: .infinity, minHeight: 52)
                     .background(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -129,10 +154,13 @@ struct DiscoveryView: View {
             }
             .buttonStyle(.plain)
 
-            Button(action: model.findAnotherStar) {
-                Text("discovery.next")
-                    .font(compact ? .caption.weight(.semibold) : .headline)
+            Button(action: model.restartFinding) {
+                Text("discovery.retry")
+                    .font(compact ? .subheadline.weight(.semibold) : .headline)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
                     .frame(maxWidth: .infinity, minHeight: 48)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -144,21 +172,6 @@ struct DiscoveryView: View {
         }
     }
 
-    private func constellationNote(compact: Bool) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "sparkles")
-                .accessibilityHidden(true)
-            Text(LocalizedStringKey(
-                compact ? "discovery.constellationSoonCompact" : "discovery.constellationSoon"
-            ))
-                .multilineTextAlignment(.center)
-        }
-        .font(compact ? .caption2 : .subheadline)
-        .foregroundStyle(Color.hsSecondary)
-        .frame(maxWidth: .infinity, minHeight: 44)
-        .accessibilityElement(children: .combine)
-        .accessibilityHint(Text("discovery.constellationHint"))
-    }
 }
 
 private struct DiscoveryGlyph: View {

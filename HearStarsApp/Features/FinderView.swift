@@ -5,31 +5,19 @@ import SwiftUI
 struct FinderView: View {
     @ObservedObject var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        GeometryReader { _ in
-            VStack(spacing: 12) {
+        GeometryReader { geometry in
+            VStack(spacing: 8) {
                 header
-
-                AuditoryLens(
-                    guidance: displayGuidance,
-                    reduceMotion: reduceMotion || displayGuidance == nil
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .accessibilityHidden(true)
-
-                status
-
-                VStack(spacing: 7) {
-                    Label("finder.soundHapticGuide", systemImage: "waveform")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.hsDiscovery)
-                    Text("finder.safetyShort")
-                        .font(.caption)
-                        .foregroundStyle(Color.hsSecondary)
-                        .multilineTextAlignment(.center)
+                if dynamicTypeSize.isAccessibilitySize || geometry.size.height < 570 {
+                    ScrollView {
+                        content(lensHeight: 140)
+                    }
+                } else {
+                    content(lensHeight: nil)
                 }
-                .accessibilityElement(children: .combine)
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
@@ -37,21 +25,46 @@ struct FinderView: View {
         }
     }
 
+    private func content(lensHeight: CGFloat?) -> some View {
+        VStack(spacing: 12) {
+            DirectionStatusView(model: model)
+            AuditoryLens(
+                guidance: displayGuidance,
+                reduceMotion: reduceMotion || displayGuidance == nil
+            )
+            .frame(height: lensHeight)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityHidden(true)
+
+            if model.directionReadiness.canUseDirection { status }
+
+            VStack(spacing: 7) {
+                Label(
+                    LocalizedStringKey(model.directionReadiness.canUseDirection ? "finder.soundHapticGuide" : "finder.guidePaused"),
+                    systemImage: model.directionReadiness.canUseDirection ? "waveform" : "pause.circle"
+                )
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(model.directionReadiness.canUseDirection ? Color.hsDiscovery : Color.hsSecondary)
+                Text("finder.safetyShort")
+                    .font(.caption)
+                    .foregroundStyle(Color.hsSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
     private var header: some View {
         HStack {
             Button(action: model.returnToPicker) {
-                Image(systemName: "xmark")
-                    .frame(width: 44, height: 44)
+                Label("common.backToStars", systemImage: "chevron.left")
+                    .font(.subheadline)
+                    .frame(minHeight: 44)
             }
-            .accessibilityLabel(Text("common.close"))
 
             Spacer()
             Text(LocalizedStringKey(model.selectedStar.nameKey))
                 .font(.headline)
-            Spacer()
-            Color.clear
-                .frame(width: 44, height: 44)
-                .accessibilityHidden(true)
         }
     }
 
@@ -123,6 +136,7 @@ struct FinderView: View {
     }
 
     private var displayGuidance: GuidanceState? {
+        guard model.directionReadiness.canUseDirection else { return nil }
         guard let guidance = model.guidance, guidance.canGuide else { return nil }
         guard !model.sensors.isUnsafeMotion else { return nil }
         guard model.isUsingSimulatedAim || (

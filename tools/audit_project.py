@@ -15,7 +15,7 @@ LOCALIZATION_PATTERN = re.compile(r'^\s*"([^"]+)"\s*=\s*"', re.MULTILINE)
 KEY_PREFIXES = (
     "app.", "common.", "mode.", "practice.", "location.", "picker.",
     "safety.", "calibration.", "accuracy.", "finder.", "direction.",
-    "discovery.", "compass.", "star.",
+    "discovery.", "compass.", "star.", "readiness.", "constellation.",
 )
 
 

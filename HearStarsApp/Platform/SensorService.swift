@@ -27,6 +27,7 @@ final class SensorService: NSObject, ObservableObject {
     @Published private(set) var headingResidualDegrees: Double?
     @Published private(set) var magneticAccuracy: CMMagneticFieldCalibrationAccuracy = .uncalibrated
     @Published private(set) var hasStationaryConfirmation = false
+    @Published private(set) var locationServicesAreEnabled = true
 
     private let locationManager = CLLocationManager()
     private let motionManager = CMMotionManager()
@@ -40,6 +41,8 @@ final class SensorService: NSObject, ObservableObject {
     }()
 
     private var isRunning = false
+    private var sensorGeneration: UInt64 = 0
+    private var sessionStartedAt = Date.distantPast
     private var wantsLocationUpdates = false
     private var lastStableAzimuth: Double?
     private var lastMotionUptime: TimeInterval?
@@ -66,6 +69,9 @@ final class SensorService: NSObject, ObservableObject {
         // Practice may already be running when the user switches to the live
         // sky. Location handling above must still occur in that case.
         if !isRunning {
+            sensorGeneration &+= 1
+            sessionStartedAt = Date()
+            if requestLocation { location = nil }
             isRunning = true
 
             if CLLocationManager.headingAvailable() {
@@ -88,6 +94,7 @@ final class SensorService: NSObject, ObservableObject {
 
     func stop() {
         isRunning = false
+        sensorGeneration &+= 1
         wantsLocationUpdates = false
         locationManager.stopUpdatingLocation()
         locationManager.stopUpdatingHeading()
@@ -100,11 +107,24 @@ final class SensorService: NSObject, ObservableObject {
         lastMotionUptime = nil
         isUnsafeMotion = false
         hasStationaryConfirmation = false
+        headingAccuracyDegrees = nil
+        trueHeadingDegrees = nil
+        magneticHeadingDegrees = nil
+        lastHeadingAt = nil
+        headingResidualDegrees = nil
+        gravityAlignmentErrorDegrees = nil
+        magneticAccuracy = .uncalibrated
+        lastStableAzimuth = nil
+        referenceKind = .arbitrary
     }
 
     var motionIsFresh: Bool {
         guard let lastMotionUptime else { return false }
         return ProcessInfo.processInfo.systemUptime - lastMotionUptime <= 0.25
+    }
+
+    var directionHardwareAvailable: Bool {
+        motionManager.isDeviceMotionAvailable && CLLocationManager.headingAvailable()
     }
 
     var movementSafetyStatus: MovementSafetyStatus {
@@ -158,9 +178,11 @@ final class SensorService: NSObject, ObservableObject {
         }
 
         motionManager.deviceMotionUpdateInterval = 1.0 / 30.0
+        let generation = sensorGeneration
         motionManager.startDeviceMotionUpdates(using: frame, to: motionQueue) { [weak self] motion, _ in
             guard let self, let motion else { return }
             Task { @MainActor in
+                guard self.isRunning, self.sensorGeneration == generation else { return }
                 self.consume(motion)
             }
         }
@@ -172,6 +194,7 @@ final class SensorService: NSObject, ObservableObject {
             isUnsafeMotion = false
             return
         }
+        let generation = sensorGeneration
         activityManager.startActivityUpdates(to: motionQueue) { [weak self] activity in
             guard let self, let activity else { return }
             let unsafe = activity.walking || activity.running || activity.cycling || activity.automotive
@@ -179,6 +202,7 @@ final class SensorService: NSObject, ObservableObject {
                 && activity.stationary
                 && activity.confidence != .low
             Task { @MainActor in
+                guard self.isRunning, self.sensorGeneration == generation else { return }
                 self.isUnsafeMotion = unsafe
                 self.hasStationaryConfirmation = stationary
             }
@@ -242,6 +266,7 @@ final class SensorService: NSObject, ObservableObject {
 
 extension SensorService: CLLocationManagerDelegate {
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        locationServicesAreEnabled = CLLocationManager.locationServicesEnabled()
         authorizationStatus = manager.authorizationStatus
         let status = manager.authorizationStatus
         let isAuthorized = status == .authorizedAlways || status == .authorizedWhenInUse
@@ -251,14 +276,17 @@ extension SensorService: CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let candidate = locations.last,
+        guard isRunning, wantsLocationUpdates, let candidate = locations.last,
+              candidate.timestamp >= sessionStartedAt.addingTimeInterval(-2),
               candidate.horizontalAccuracy >= 0,
               abs(candidate.timestamp.timeIntervalSinceNow) < 60 else { return }
         location = candidate
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
-        guard abs(newHeading.timestamp.timeIntervalSinceNow) <= 5 else { return }
+        guard isRunning,
+              newHeading.timestamp >= sessionStartedAt.addingTimeInterval(-2),
+              abs(newHeading.timestamp.timeIntervalSinceNow) <= 5 else { return }
         headingAccuracyDegrees = newHeading.headingAccuracy >= 0 ? newHeading.headingAccuracy : nil
         trueHeadingDegrees = newHeading.trueHeading >= 0 ? newHeading.trueHeading : nil
         magneticHeadingDegrees = newHeading.magneticHeading >= 0 ? newHeading.magneticHeading : nil
