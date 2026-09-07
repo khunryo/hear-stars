@@ -21,7 +21,9 @@ public struct DiscoveryHoldTracker: Sendable {
             return false
         }
 
-        if let enteredAt, date.timeIntervalSince(enteredAt) >= requiredDuration {
+        // Compare dates against the deadline. Subtracting their floating-point
+        // timestamps can round an exact 0.8-second hold just below the threshold.
+        if let enteredAt, date >= enteredAt.addingTimeInterval(requiredDuration) {
             didTrigger = true
             return true
         }
