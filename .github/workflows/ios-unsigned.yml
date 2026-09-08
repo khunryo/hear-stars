@@ -1,0 +1,122 @@
+name: iPhone test build (free standard Mac)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/readiness-return-flow]
+    paths:
+      - '.github/workflows/ios-unsigned.yml'
+      - 'HearStarsApp/**'
+      - 'Sources/**'
+      - 'Tests/**'
+      - 'tools/**'
+      - 'project.yml'
+      - 'Package.swift'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Standard public-repository runners are free; never substitute a large runner.
+    if: github.event.repository.private == false
+    runs-on: macos-26
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+    steps:
+      - name: Check out source without saving credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Check Mac and Xcode
+        run: |
+          test "$(uname -m)" = arm64
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Generate and audit project
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          python3 tools/audit_project.py
+          xcodegen generate
+
+      - name: Test astronomy and direction readiness
+        run: swift test
+
+      - name: Build unsigned iPhone app
+        run: |
+          mkdir -p build
+          xcodebuild \
+            -project HearStars.xcodeproj \
+            -scheme HearStars \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/ios/derived \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            build > build/xcodebuild.log 2>&1 || {
+              tail -n 80 build/xcodebuild.log
+              exit 1
+            }
+          tail -n 5 build/xcodebuild.log
+
+      - name: Verify built translations and render actual copy views
+        run: |
+          APP_PATH="$(find build/ios/derived/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -type d | head -n 1)"
+          test -n "$APP_PATH"
+          xcrun --sdk macosx swiftc -parse-as-library -module-name HearStarsCore \
+            -sdk "$(xcrun --sdk macosx --show-sdk-path)" \
+            -target arm64-apple-macos14.0 \
+            Sources/HearStarsCore/*.swift \
+            HearStarsApp/App/GuidanceMode.swift \
+            HearStarsApp/Design/NightPalette.swift \
+            HearStarsApp/Components/DirectionStatusCopy.swift \
+            tools/verify_readiness_ui.swift \
+            -o build/verify-readiness-ui
+          build/verify-readiness-ui "$APP_PATH" build/readiness-ui
+
+      - name: Package IPA for Sideloadly
+        run: |
+          APP_PATH="$(find build/ios/derived/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -type d | head -n 1)"
+          test -n "$APP_PATH"
+          mkdir -p build/ios/ipa/Payload
+          cp -R "$APP_PATH" build/ios/ipa/Payload/HearStars.app
+          (cd build/ios/ipa && zip -qry HearStars-unsigned.ipa Payload)
+          python3 tools/verify_ipa.py build/ios/ipa/HearStars-unsigned.ipa
+
+      - name: Keep only small download files for one day
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          paths = [Path('build/ios/ipa/HearStars-unsigned.ipa')]
+          paths += list(Path('build/readiness-ui').glob('*.png'))
+          assert len(paths) == 3, 'Expected one IPA and two language screenshots'
+          size = sum(path.stat().st_size for path in paths)
+          assert size <= 20 * 1024 * 1024, 'Artifact is unexpectedly large; skip upload'
+          print(f'Download files: {size:,} bytes; retention: 1 day; no cache')
+          PY
+
+      - name: Save IPA and readiness screenshots
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: HearStars-build3-${{ github.run_number }}
+          path: |
+            build/ios/ipa/HearStars-unsigned.ipa
+            build/readiness-ui/*.png
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
