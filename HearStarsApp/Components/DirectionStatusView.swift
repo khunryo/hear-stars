@@ -21,14 +21,7 @@ struct DirectionStatusView: View {
                         .foregroundStyle(state.canUseDirection ? Color.hsDiscovery : Color.hsGuide)
                         .accessibilityHidden(true)
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(LocalizedStringKey("readiness.\(state.rawValue).title"))
-                        .font(.subheadline.weight(.semibold))
-                    Text(LocalizedStringKey("readiness.\(state.rawValue).body"))
-                        .font(.caption)
-                        .foregroundStyle(Color.hsSecondary)
-                }
-                .fixedSize(horizontal: false, vertical: true)
+                DirectionStatusCopy(state: state)
             }
             .accessibilityElement(children: .combine)
 

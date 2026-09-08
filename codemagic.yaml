@@ -41,6 +41,20 @@ workflows:
             CODE_SIGN_ENTITLEMENTS="" \
             build
 
+      - name: Verify built readiness text and render actual copy views
+        script: |
+          APP_PATH="$(find "$CM_BUILD_DIR/build/ios/derived/Build/Products/Release-iphoneos" -maxdepth 1 -name '*.app' -type d | head -n 1)"
+          test -n "$APP_PATH"
+          swiftc -parse-as-library -module-name HearStarsCore \
+            -target arm64-apple-macos14.0 \
+            Sources/HearStarsCore/*.swift \
+            HearStarsApp/App/GuidanceMode.swift \
+            HearStarsApp/Design/NightPalette.swift \
+            HearStarsApp/Components/DirectionStatusCopy.swift \
+            tools/verify_readiness_ui.swift \
+            -o "$CM_BUILD_DIR/build/verify-readiness-ui"
+          "$CM_BUILD_DIR/build/verify-readiness-ui" "$APP_PATH" "$CM_BUILD_DIR/build/readiness-ui"
+
       - name: Package unsigned IPA for Sideloadly
         script: |
           APP_PATH="$(find "$CM_BUILD_DIR/build/ios/derived/Build/Products/Release-iphoneos" -maxdepth 1 -name '*.app' -type d | head -n 1)"
@@ -54,4 +68,5 @@ workflows:
 
     artifacts:
       - build/ios/ipa/*.ipa
+      - build/readiness-ui/*.png
       - /tmp/xcodebuild_logs/*.log

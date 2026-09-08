@@ -391,7 +391,7 @@ final class AppModel: ObservableObject {
         )
         guard state != directionReadiness else { return }
         directionReadiness = state
-        announce(L10n.string("readiness.\(state.rawValue).title"), force: false)
+        announce(L10n.string(state.titleLocalizationKey), force: false)
     }
 
     private func emitPulseIfNeeded(_ state: GuidanceState) {

@@ -1,12 +1,16 @@
 import Foundation
 
 /// Readiness is based on live measurements, never on an elapsed calibration animation.
-public enum DirectionReadiness: String, Equatable, Sendable {
+public enum DirectionReadiness: String, CaseIterable, Equatable, Sendable {
     case locationPermission, locationDenied, locationRestricted, locationServicesOff
     case locating, locationDelayed, sensorUnavailable, checkingDirection, directionDelayed
     case calibrating, moving, belowHorizon, ready
 
     public var canUseDirection: Bool { self == .ready }
+
+    // Assemble a plain String before handing the key to a localization API.
+    public var titleLocalizationKey: String { "readiness." + rawValue + ".title" }
+    public var bodyLocalizationKey: String { "readiness." + rawValue + ".body" }
 
     public enum LocationState: Sendable {
         case permissionRequired, denied, restricted, servicesOff, waiting, available

@@ -87,6 +87,20 @@ def check_localizations() -> None:
     missing = referenced - ja
     require(not missing, f"Missing localized strings: {sorted(missing)}")
 
+    # A literal interpolation inside LocalizedStringKey looks up a FORMAT key,
+    # not the fully assembled readiness.<state>.title/body key. Ban that mistake.
+    for line in swift_lines:
+        require(
+            not re.search(r'LocalizedStringKey\(\s*"[^"\n]*\\\(', line),
+            f"Interpolated localization key must be assembled as String first: {line.strip()}",
+        )
+    readiness_source = (ROOT / "Sources/HearStarsCore/DirectionReadiness.swift").read_text(encoding="utf-8")
+    cases = re.findall(r'^    case ([^\n]+)', readiness_source, re.MULTILINE)
+    states = [state.strip() for declaration in cases for state in declaration.split(",")]
+    readiness_keys = {f"readiness.{state}.{part}" for state in states for part in ("title", "body")}
+    require(bool(states), "No direction readiness states found")
+    require(readiness_keys <= ja, f"Missing readiness strings: {sorted(readiness_keys-ja)}")
+
 
 def check_privacy_and_scope() -> None:
     manifest = ROOT / "HearStarsApp/Resources/PrivacyInfo.xcprivacy"

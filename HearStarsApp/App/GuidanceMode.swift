@@ -34,8 +34,8 @@ enum AppRoute: Equatable {
 }
 
 enum L10n {
-    static func string(_ key: String) -> String {
-        NSLocalizedString(key, comment: "")
+    static func string(_ key: String, bundle: Bundle = .main) -> String {
+        NSLocalizedString(key, bundle: bundle, comment: "")
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {
