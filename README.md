@@ -16,7 +16,7 @@
 
 ## 開発状態
 
-Windows 上で、設計、純粋計算コード、アプリコード、XcodeGen 定義を作成しています。現時点では Codemagic 設定、署名付き archive、配布可能な IPA、ダウンロードリンクはありません。まず macOS/Xcode から開発署名した実機ビルドで[屋外実機テスト](docs/08-field-test.md)を行い、精度・安全・権利のゲートを通過した後にだけ、クラウドビルドと配布用 IPA を準備します。屋外検証が終わるまでは「実際の星を発見できる」と断定しません。
+本人の実機試用向けに、GitHub Actions の無料標準 Mac 環境で署名なし IPA を作成します。[ビルドと Sideloadly の手順](docs/09-build-and-sideload.md)を参照してください。Codemagic の設定も残っていますが、無料枠消費後の標準ビルド先は GitHub です。一般向け配布は[屋外実機テスト](docs/08-field-test.md)と精度・安全・権利のゲート通過後の別工程です。屋外検証が終わるまでは「実際の星を発見できる」と断定しません。
 
 ## ドキュメント
 
@@ -29,7 +29,7 @@ Windows 上で、設計、純粋計算コード、アプリコード、XcodeGen 
 6. [MVP 要件とデータ権利判断（出荷権利の正本）](docs/REQUIREMENTS-AND-RIGHTS.md)
 7. [受入条件](docs/07-acceptance.md)
 8. [屋外実機テスト](docs/08-field-test.md)
-9. [ローカルビルドと将来の IPA 配布](docs/09-build-and-sideload.md)
+9. [GitHub の無料ビルドと iPhone での試用](docs/09-build-and-sideload.md)
 
 ## プロジェクト生成（macOS）
 
