@@ -40,7 +40,7 @@ struct FinderView: View {
 
             VStack(spacing: 7) {
                 Label(
-                    LocalizedStringKey(model.directionReadiness.canUseDirection ? "finder.soundHapticGuide" : "finder.guidePaused"),
+                    LocalizedStringKey(feedbackLabelKey),
                     systemImage: model.directionReadiness.canUseDirection ? "waveform" : "pause.circle"
                 )
                 .font(.subheadline.weight(.medium))
@@ -75,7 +75,7 @@ struct FinderView: View {
                 .font(.headline)
                 .multilineTextAlignment(.center)
             if displayGuidance != nil {
-                Text("finder.followPulse")
+                Text(LocalizedStringKey(model.directionReadiness == .approximate ? "finder.approximateFollowPulse" : "finder.followPulse"))
                     .font(.caption)
                     .foregroundStyle(Color.hsSecondary)
                     .multilineTextAlignment(.center)
@@ -119,10 +119,15 @@ struct FinderView: View {
         guard let guidance = model.guidance else {
             return L10n.string("finder.waitingSensors")
         }
-        if guidance.headingQuality == .needsCalibration || guidance.headingQuality == .unavailable {
+        if guidance.headingQuality == .unavailable {
             return L10n.string("finder.calibrateSimple")
         }
         return L10n.string("direction.\(guidance.direction.rawValue)")
+    }
+
+    private var feedbackLabelKey: String {
+        if model.directionReadiness == .approximate { return "finder.approximateSoundHapticGuide" }
+        return model.directionReadiness.canUseDirection ? "finder.soundHapticGuide" : "finder.guidePaused"
     }
 
     private var statusDetail: String {

@@ -31,12 +31,17 @@ struct VerifyReadinessUI {
             precondition(calibrationCopy.title == (
                 language == "ja" ? "方角の調整が必要です" : "Direction needs adjusting"
             ))
+            for key in ["accuracy.approximate", "direction.vicinity", "finder.approximateFollowPulse",
+                        "finder.approximateSoundHapticGuide", "finder.approximateVoiceStatus"] {
+                let value = L10n.string(key, bundle: bundle)
+                precondition(!value.isEmpty && value != key, "Missing approximate-guidance copy: \(key)")
+            }
             print("\(language): all \(DirectionReadiness.allCases.count) readiness titles and bodies resolved")
 
             let content = VStack(alignment: .leading, spacing: 18) {
-                ForEach([DirectionReadiness.checkingDirection, .calibrating, .ready], id: \.rawValue) { state in
+                ForEach([DirectionReadiness.checkingDirection, .calibrating, .approximate, .ready], id: \.rawValue) { state in
                     HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: state.canUseDirection ? "checkmark.circle.fill" : "info.circle")
+                        Image(systemName: state.canConfirmAlignment ? "checkmark.circle.fill" : "info.circle")
                             .foregroundStyle(Color.hsDiscovery)
                         DirectionStatusCopy(state: state, bundle: bundle)
                     }

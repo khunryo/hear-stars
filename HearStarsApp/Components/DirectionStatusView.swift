@@ -17,8 +17,8 @@ struct DirectionStatusView: View {
                         .tint(Color.hsSecondary)
                         .accessibilityHidden(true)
                 } else {
-                    Image(systemName: state.canUseDirection ? "checkmark.circle.fill" : "info.circle")
-                        .foregroundStyle(state.canUseDirection ? Color.hsDiscovery : Color.hsGuide)
+                    Image(systemName: state.canConfirmAlignment ? "checkmark.circle.fill" : "info.circle")
+                        .foregroundStyle(state.canConfirmAlignment ? Color.hsDiscovery : Color.hsGuide)
                         .accessibilityHidden(true)
                 }
                 DirectionStatusCopy(state: state)
@@ -32,7 +32,7 @@ struct DirectionStatusView: View {
                 Button("readiness.retry", action: model.retryDirectionSetup)
                     .frame(minHeight: 44)
             }
-            if state == .calibrating || state == .directionDelayed || state == .checkingDirection {
+            if state == .calibrating || state == .approximate || state == .directionDelayed || state == .checkingDirection {
                 DirectionDiagnosticsView(sensors: model.sensors)
             }
         }

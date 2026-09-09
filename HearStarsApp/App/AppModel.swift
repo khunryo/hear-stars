@@ -303,7 +303,7 @@ final class AppModel: ObservableObject {
             headingAccuracy = 0
         } else {
             aim = sensors.aim
-            sensorIsFresh = sensors.motionIsFresh
+            sensorIsFresh = sensors.motionIsFresh && sensors.headingIsFresh
             headingAccuracy = sensors.effectiveHeadingAccuracyDegrees
         }
 
@@ -336,7 +336,10 @@ final class AppModel: ObservableObject {
         announceBandIfNeeded(state)
         emitPulseIfNeeded(state)
 
-        if holdTracker.update(isEligible: state.canDiscover, at: Date()) {
+        if holdTracker.update(
+            isEligible: directionReadiness.canConfirmAlignment && state.canDiscover,
+            at: Date()
+        ) {
             completeDiscovery()
         }
     }
@@ -453,6 +456,9 @@ final class AppModel: ObservableObject {
 
     func directionDescription(_ state: GuidanceState) -> String {
         let direction = L10n.string("direction.\(state.direction.rawValue)")
+        if state.headingQuality == .approximate {
+            return L10n.format("finder.approximateVoiceStatus", direction)
+        }
         let horizontal = abs(state.azimuthErrorDegrees)
         let vertical = abs(state.altitudeErrorDegrees)
         return L10n.format("finder.voiceStatus", direction, horizontal, vertical)

@@ -4,9 +4,10 @@ import Foundation
 public enum DirectionReadiness: String, CaseIterable, Equatable, Sendable {
     case locationPermission, locationDenied, locationRestricted, locationServicesOff
     case locating, locationDelayed, sensorUnavailable, checkingDirection, directionDelayed
-    case calibrating, moving, belowHorizon, ready
+    case calibrating, approximate, moving, belowHorizon, ready
 
-    public var canUseDirection: Bool { self == .ready }
+    public var canUseDirection: Bool { self == .ready || self == .approximate }
+    public var canConfirmAlignment: Bool { self == .ready }
 
     // Assemble a plain String before handing the key to a localization API.
     public var titleLocalizationKey: String { "readiness." + rawValue + ".title" }
@@ -47,7 +48,8 @@ public enum DirectionReadiness: String, CaseIterable, Equatable, Sendable {
         }
         switch GuidanceMapper.headingQuality(headingAccuracyDegrees) {
         case .good, .fair: return .ready
-        case .needsCalibration, .unavailable: return .calibrating
+        case .approximate: return .approximate
+        case .unavailable: return .calibrating
         }
     }
 }

@@ -32,10 +32,12 @@
 "readiness.belowHorizon.body" = "This star is currently too low for guidance. Use Choose a star to select another one.";
 "readiness.ready.title" = "Direction is ready";
 "readiness.ready.body" = "Direction guidance is available. Point the back of your iPhone toward the sky.";
+"readiness.approximate.title" = "Guiding the approximate direction";
+"readiness.approximate.body" = "Sound and vibration can guide you nearby. The direction is still approximate, so alignment will only be confirmed when accuracy improves.";
 "readiness.openSettings" = "Open Settings";
 "readiness.retry" = "Check again";
 "diagnostics.title" = "Troubleshooting details";
-"diagnostics.headingSummary" = "Heading accuracy: ±%@° (guidance needs 10° or less)\nHeading update: %@ s ago (wait after 2 s)\nTime-matched sensor difference: %@°\nGravity alignment error: %@° (2° or less)\nMagnetic calibration: %@\n— means not yet comparable. These values are displayed only, never saved or sent.";
+"diagnostics.headingSummary" = "Heading accuracy: ±%@° (approximate guidance up to 25°; alignment check up to 10°)\nHeading update: %@ s ago (wait after 2 s)\nTime-matched sensor difference: %@°\nGravity alignment error: %@° (2° or less)\nMagnetic calibration: %@\n— means not yet comparable. These values are displayed only, never saved or sent.";
 "diagnostics.magneticUncalibrated" = "Preparing";
 "diagnostics.magneticLow" = "Low";
 "diagnostics.magneticMedium" = "Medium";
@@ -105,7 +107,7 @@
 
 "accuracy.good" = "Good";
 "accuracy.fair" = "Check";
-"accuracy.needsCalibration" = "Adjust";
+"accuracy.approximate" = "Approximate";
 "accuracy.unavailable" = "Waiting";
 "accuracy.value" = "%1$@ ±%2$.0f°";
 
@@ -116,6 +118,9 @@
 "finder.belowHorizonSimple" = "This star is below the horizon right now";
 "finder.calibrateSimple" = "Move your iPhone slowly in a figure eight";
 "finder.followPulse" = "Move toward the faster sound and vibration";
+"finder.approximateFollowPulse" = "Approximate guidance. Turn slowly as you get nearby";
+"finder.approximateSoundHapticGuide" = "Approximate guidance with sound and vibration";
+"finder.approximateVoiceStatus" = "Approximate direction. %@. Alignment is not yet confirmed.";
 "finder.soundHapticGuide" = "Guiding with sound and vibration";
 "finder.safetyShort" = "Stay still and check the ground and people around you";
 "finder.locationDenied" = "Location is unavailable · practice still works";
@@ -135,6 +140,7 @@
 "finder.lowHorizonWarning" = "Near the horizon, refraction and obstacles reduce certainty. Below 2 degrees, discovery lock stays paused.";
 
 "direction.aligned" = "Hold here";
+"direction.vicinity" = "Around here";
 "direction.reverse" = "Turn slowly around";
 "direction.left" = "Move left";
 "direction.right" = "Move right";

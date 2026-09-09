@@ -18,26 +18,27 @@ final class DirectionReadinessTests: XCTestCase {
         }
     }
 
-    func testFreshBadCompassStillRequiresCalibrationAfterWaiting() {
+    func testFreshApproximateCompassCanGuideAfterWaiting() {
         let state = DirectionReadiness.evaluate(
             location: .available, directionHardwareAvailable: true,
             sensorIsFresh: true, headingAccuracyDegrees: 18,
             targetAltitudeDegrees: 35, isMoving: false,
             preparationHasTimedOut: true, headingIsFresh: true
         )
-        assertReadiness(state, .calibrating)
-        XCTAssertFalse(state.canUseDirection)
+        assertReadiness(state, .approximate)
+        XCTAssertTrue(state.canUseDirection)
+        XCTAssertFalse(state.canConfirmAlignment)
     }
 
     func testCalibrationBecomesReadyWhenLiveHeadingImprovesToGoodOrFair() {
         assertReadiness(readiness(headingAccuracyDegrees: nil), .calibrating)
-        assertReadiness(readiness(headingAccuracyDegrees: 18), .calibrating)
+        assertReadiness(readiness(headingAccuracyDegrees: 18), .approximate)
         assertReadiness(readiness(headingAccuracyDegrees: 8), .ready)
         assertReadiness(readiness(headingAccuracyDegrees: 10), .ready)
     }
 
-    func testElapsedPreparationNeverMakesBadOrMissingHeadingReady() {
-        let unusableAccuracies: [Double?] = [nil, -1, 10.001, 25, 25.001, Double.nan, Double.infinity]
+    func testElapsedPreparationNeverMakesUnavailableHeadingReady() {
+        let unusableAccuracies: [Double?] = [nil, -1, 25.000_001, Double.nan, Double.infinity]
         for accuracy in unusableAccuracies {
             for timedOut in [false, true] {
                 assertReadiness(
@@ -46,6 +47,8 @@ final class DirectionReadinessTests: XCTestCase {
                 )
             }
         }
+        assertReadiness(readiness(headingAccuracyDegrees: 10.001), .approximate)
+        assertReadiness(readiness(headingAccuracyDegrees: 25), .approximate)
         assertReadiness(readiness(headingAccuracyDegrees: 9, preparationHasTimedOut: true), .ready)
     }
 
@@ -61,9 +64,52 @@ final class DirectionReadinessTests: XCTestCase {
 
     func testReadyIsRevokedWhenHeadingDeterioratesAndRecoversWithoutRestart() {
         assertReadiness(readiness(headingAccuracyDegrees: 4), .ready)
-        assertReadiness(readiness(headingAccuracyDegrees: 12), .calibrating)
+        assertReadiness(readiness(headingAccuracyDegrees: 12), .approximate)
         assertReadiness(readiness(headingAccuracyDegrees: nil), .calibrating)
         assertReadiness(readiness(headingAccuracyDegrees: 9), .ready)
+    }
+
+    func testScreenshotAccuracyIsApproximateWithoutRelaxingOtherGates() {
+        assertReadiness(readiness(headingAccuracyDegrees: 14.5), .approximate)
+        assertReadiness(readiness(headingAccuracyDegrees: 14.5, isMoving: true), .moving)
+        assertReadiness(readiness(headingAccuracyDegrees: 14.5, sensorIsFresh: false), .checkingDirection)
+        assertReadiness(
+            readiness(headingAccuracyDegrees: 14.5, sensorIsFresh: false, preparationHasTimedOut: true),
+            .directionDelayed
+        )
+    }
+
+    func testApproximateHeadingPreservesReadinessGates() {
+        let cases: [(
+            location: DirectionReadiness.LocationState,
+            hardwareAvailable: Bool,
+            altitude: Double?,
+            headingIsFresh: Bool,
+            expected: DirectionReadiness
+        )] = [
+            (.denied, true, 30, true, .locationDenied),
+            (.restricted, true, 30, true, .locationRestricted),
+            (.permissionRequired, true, 30, true, .locationPermission),
+            (.servicesOff, true, 30, true, .locationServicesOff),
+            (.waiting, true, 30, true, .locating),
+            (.available, false, 30, true, .sensorUnavailable),
+            (.available, true, 1.99, true, .belowHorizon),
+            (.available, true, nil, true, .locating),
+            (.available, true, 30, false, .checkingDirection)
+        ]
+
+        for testCase in cases {
+            assertReadiness(
+                readiness(
+                    location: testCase.location,
+                    directionHardwareAvailable: testCase.hardwareAvailable,
+                    headingAccuracyDegrees: 14.5,
+                    targetAltitudeDegrees: testCase.altitude,
+                    headingIsFresh: testCase.headingIsFresh
+                ),
+                testCase.expected
+            )
+        }
     }
 
     func testMovementImmediatelyRevokesReadinessAndStoppingRestoresIt() {
@@ -141,7 +187,8 @@ final class DirectionReadinessTests: XCTestCase {
         headingAccuracyDegrees: Double? = 4,
         targetAltitudeDegrees: Double? = 30,
         isMoving: Bool = false,
-        preparationHasTimedOut: Bool = false
+        preparationHasTimedOut: Bool = false,
+        headingIsFresh: Bool = true
     ) -> DirectionReadiness {
         DirectionReadiness.evaluate(
             location: location,
@@ -150,7 +197,8 @@ final class DirectionReadinessTests: XCTestCase {
             headingAccuracyDegrees: headingAccuracyDegrees,
             targetAltitudeDegrees: targetAltitudeDegrees,
             isMoving: isMoving,
-            preparationHasTimedOut: preparationHasTimedOut
+            preparationHasTimedOut: preparationHasTimedOut,
+            headingIsFresh: headingIsFresh
         )
     }
 
@@ -161,6 +209,12 @@ final class DirectionReadinessTests: XCTestCase {
         line: UInt = #line
     ) {
         XCTAssertEqual(actual, expected, file: file, line: line)
-        XCTAssertEqual(actual.canUseDirection, expected == .ready, file: file, line: line)
+        XCTAssertEqual(
+            actual.canUseDirection,
+            expected == .ready || expected == .approximate,
+            file: file,
+            line: line
+        )
+        XCTAssertEqual(actual.canConfirmAlignment, expected == .ready, file: file, line: line)
     }
 }

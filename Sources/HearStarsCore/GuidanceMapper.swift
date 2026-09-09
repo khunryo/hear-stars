@@ -20,6 +20,7 @@ public enum GuidanceBand: String, Equatable, Sendable {
 
 public enum DirectionCue: String, Equatable, Sendable {
     case aligned
+    case vicinity
     case reverse
     case left
     case right
@@ -33,7 +34,7 @@ public enum DirectionCue: String, Equatable, Sendable {
 
 public enum HeadingQuality: String, Equatable, Sendable {
     case unavailable
-    case needsCalibration
+    case approximate
     case fair
     case good
 }
@@ -91,14 +92,18 @@ public enum GuidanceMapper {
         )
         let quality = headingQuality(input.headingAccuracyDegrees)
         let tolerance = discoveryTolerance(input.headingAccuracyDegrees)
-        let band = guidanceBand(separation: separation, tolerance: tolerance)
+        let band = guidanceBand(
+            separation: separation,
+            tolerance: tolerance,
+            quality: quality
+        )
         let canGuide = input.isSensorFresh
             && !input.isMoving
             && quality != .unavailable
         let canDiscover = canGuide
             && (input.isPractice || input.target.altitudeDegrees >= 2.0)
             && quality != .unavailable
-            && quality != .needsCalibration
+            && quality != .approximate
             && separation <= tolerance
 
         return GuidanceState(
@@ -109,12 +114,17 @@ public enum GuidanceMapper {
                 angularSeparation: separation,
                 azimuthError: azimuthError,
                 altitudeError: altitudeError,
-                tolerance: tolerance
+                tolerance: tolerance,
+                quality: quality,
+                accuracy: input.headingAccuracyDegrees
             ),
             band: band,
             headingQuality: quality,
             pulseIntervalSeconds: pulseInterval(for: band),
-            clarity: AngleMath.clamp(1.0 - separation / 55.0, min: 0.0, max: 1.0),
+            clarity: min(
+                AngleMath.clamp(1.0 - separation / 55.0, min: 0.0, max: 1.0),
+                quality == .approximate ? 0.6 : 1.0
+            ),
             discoveryToleranceDegrees: tolerance,
             canGuide: canGuide,
             canDiscover: canDiscover
@@ -154,10 +164,10 @@ public enum GuidanceMapper {
     }
 
     public static func headingQuality(_ accuracy: Double?) -> HeadingQuality {
-        guard let accuracy, accuracy >= 0, accuracy <= 25.0 else { return .unavailable }
+        guard let accuracy, accuracy.isFinite, accuracy >= 0, accuracy <= 25.0 else { return .unavailable }
         if accuracy <= 8.0 { return .good }
         if accuracy <= 10.0 { return .fair }
-        return .needsCalibration
+        return .approximate
     }
 
     private static func discoveryTolerance(_ accuracy: Double?) -> Double {
@@ -165,12 +175,19 @@ public enum GuidanceMapper {
         return AngleMath.clamp(3.0 + accuracy / 3.0, min: 3.0, max: 6.0)
     }
 
-    private static func guidanceBand(separation: Double, tolerance: Double) -> GuidanceBand {
-        if separation <= tolerance { return .aligned }
-        if separation <= 8.0 { return .close }
-        if separation <= 20.0 { return .near }
-        if separation <= 45.0 { return .broad }
-        return .far
+    private static func guidanceBand(
+        separation: Double,
+        tolerance: Double,
+        quality: HeadingQuality
+    ) -> GuidanceBand {
+        let band: GuidanceBand
+        if separation <= tolerance { band = .aligned }
+        else if separation <= 8.0 { band = .close }
+        else if separation <= 20.0 { band = .near }
+        else if separation <= 45.0 { band = .broad }
+        else { band = .far }
+        if quality == .approximate, band == .aligned || band == .close { return .near }
+        return band
     }
 
     private static func pulseInterval(for band: GuidanceBand) -> Double {
@@ -187,8 +204,16 @@ public enum GuidanceMapper {
         angularSeparation: Double,
         azimuthError: Double,
         altitudeError: Double,
-        tolerance: Double
+        tolerance: Double,
+        quality: HeadingQuality,
+        accuracy: Double?
     ) -> DirectionCue {
+        if quality == .approximate,
+           let accuracy,
+           accuracy.isFinite,
+           angularSeparation <= max(accuracy, tolerance) {
+            return .vicinity
+        }
         if angularSeparation <= tolerance { return .aligned }
         if abs(azimuthError) >= 135.0 { return .reverse }
 

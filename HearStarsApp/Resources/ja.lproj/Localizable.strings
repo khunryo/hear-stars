@@ -32,10 +32,12 @@
 "readiness.belowHorizon.body" = "今はこの星を案内できる高さではありません。「星を選ぶ」から、別の星を選んでください。";
 "readiness.ready.title" = "方角の準備ができました";
 "readiness.ready.body" = "方角を案内できます。iPhoneの背面を空へ向けてください。";
+"readiness.approximate.title" = "おおよその方向を案内しています";
+"readiness.approximate.body" = "音と振動で近くまで案内できます。まだ方角に幅があるため、「捉えた」の確認は精度が整ってから行います。";
 "readiness.openSettings" = "設定を開く";
 "readiness.retry" = "もう一度確認する";
 "diagnostics.title" = "うまくいかないときの確認";
-"diagnostics.headingSummary" = "方角の精度：±%@°（案内の目安は10°以内）\n方角の更新：%@秒前（2秒を超えると更新待ち）\n近い時刻のセンサー間の差：%@°\n傾きの整合差：%@°（2°以内）\n磁気の調整：%@\n— はまだ比較できない項目です。表示だけで、記録・送信はしません。";
+"diagnostics.headingSummary" = "方角の精度：±%@°（大まかな案内は25°以内、一致の確認は10°以内）\n方角の更新：%@秒前（2秒を超えると更新待ち）\n近い時刻のセンサー間の差：%@°\n傾きの整合差：%@°（2°以内）\n磁気の調整：%@\n— はまだ比較できない項目です。表示だけで、記録・送信はしません。";
 "diagnostics.magneticUncalibrated" = "準備中";
 "diagnostics.magneticLow" = "低";
 "diagnostics.magneticMedium" = "中";
@@ -105,7 +107,7 @@
 
 "accuracy.good" = "良い";
 "accuracy.fair" = "確認";
-"accuracy.needsCalibration" = "調整が必要";
+"accuracy.approximate" = "おおよそ";
 "accuracy.unavailable" = "待機中";
 "accuracy.value" = "%1$@ ±%2$.0f°";
 
@@ -116,6 +118,9 @@
 "finder.belowHorizonSimple" = "この星はいま地平線の下です";
 "finder.calibrateSimple" = "iPhoneを8の字にゆっくり動かしてください";
 "finder.followPulse" = "音と振動が速くなる方へ";
+"finder.approximateFollowPulse" = "大まかな目安です。近くではゆっくり向けてください";
+"finder.approximateSoundHapticGuide" = "音と振動でおおよその方向を案内中";
+"finder.approximateVoiceStatus" = "おおよその方向です。%@。まだ一致の確認はしていません。";
 "finder.soundHapticGuide" = "音と振動で案内します";
 "finder.safetyShort" = "立ち止まり、周囲と足元を確認して使ってください";
 "finder.locationDenied" = "現在地を利用できません・練習は利用できます";
@@ -135,6 +140,7 @@
 "finder.lowHorizonWarning" = "地平線付近は大気差や障害物で不確かです。高度2度未満では発見判定を停止します。";
 
 "direction.aligned" = "その向きで保ちます";
+"direction.vicinity" = "このあたりです";
 "direction.reverse" = "ゆっくり反対側へ";
 "direction.left" = "左へ";
 "direction.right" = "右へ";

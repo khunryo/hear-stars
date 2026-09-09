@@ -24,7 +24,7 @@ final class GuidanceMapperTests: XCTestCase {
         XCTAssertEqual(state.direction, .aligned)
     }
 
-    func testBadHeadingCanGuideButCannotDiscover() {
+    func testApproximateHeadingCanGuideButCannotDiscoverEvenInPractice() {
         let state = GuidanceMapper.map(
             .init(
                 target: .init(azimuthDegrees: 180, altitudeDegrees: 45, localHourAngleDegrees: 0),
@@ -37,7 +37,18 @@ final class GuidanceMapperTests: XCTestCase {
         )
         XCTAssertTrue(state.canGuide)
         XCTAssertFalse(state.canDiscover)
-        XCTAssertEqual(state.headingQuality, .needsCalibration)
+        XCTAssertEqual(state.headingQuality, .approximate)
+        let practice = GuidanceMapper.map(
+            .init(
+                target: .init(azimuthDegrees: 180, altitudeDegrees: 45, localHourAngleDegrees: 0),
+                aim: .init(azimuthDegrees: 180, altitudeDegrees: 45),
+                headingAccuracyDegrees: 22,
+                isMoving: false,
+                isSensorFresh: true,
+                isPractice: true
+            )
+        )
+        XCTAssertFalse(practice.canDiscover)
     }
 
     func testHeadingQualityPhaseOneBoundaries() {
@@ -46,9 +57,11 @@ final class GuidanceMapperTests: XCTestCase {
         XCTAssertEqual(GuidanceMapper.headingQuality(8), .good)
         XCTAssertEqual(GuidanceMapper.headingQuality(8.000_001), .fair)
         XCTAssertEqual(GuidanceMapper.headingQuality(10), .fair)
-        XCTAssertEqual(GuidanceMapper.headingQuality(10.000_001), .needsCalibration)
-        XCTAssertEqual(GuidanceMapper.headingQuality(25), .needsCalibration)
+        XCTAssertEqual(GuidanceMapper.headingQuality(10.000_001), .approximate)
+        XCTAssertEqual(GuidanceMapper.headingQuality(25), .approximate)
         XCTAssertEqual(GuidanceMapper.headingQuality(25.000_001), .unavailable)
+        XCTAssertEqual(GuidanceMapper.headingQuality(Double.nan), .unavailable)
+        XCTAssertEqual(GuidanceMapper.headingQuality(Double.infinity), .unavailable)
     }
 
     func testUnavailableHeadingStopsGuidanceAndDiscovery() {
@@ -65,6 +78,71 @@ final class GuidanceMapperTests: XCTestCase {
         XCTAssertEqual(state.headingQuality, .unavailable)
         XCTAssertFalse(state.canGuide)
         XCTAssertFalse(state.canDiscover)
+    }
+
+    func testApproximateHeadingUsesVicinityWithoutFalseAlignmentOrCloseFeedback() {
+        for accuracy in [10.000_001, 14.5, 25.0] {
+            let tolerance = min(3.0 + accuracy / 3.0, 6.0)
+            let cases: [(name: String, separation: Double, expectedCue: DirectionCue)] = [
+                ("inside tolerance", 0, .vicinity),
+                ("within reported accuracy", (tolerance + accuracy) / 2, .vicinity),
+                ("outside reported accuracy", accuracy + 1, .right)
+            ]
+
+            for testCase in cases {
+                let state = GuidanceMapper.map(
+                    .init(
+                        target: .init(
+                            azimuthDegrees: testCase.separation,
+                            altitudeDegrees: 0,
+                            localHourAngleDegrees: 0
+                        ),
+                        aim: .init(azimuthDegrees: 0, altitudeDegrees: 0),
+                        headingAccuracyDegrees: accuracy,
+                        isMoving: false,
+                        isSensorFresh: true,
+                        isPractice: false
+                    )
+                )
+
+                XCTAssertEqual(state.angularSeparationDegrees, testCase.separation, accuracy: 1e-12)
+                XCTAssertEqual(state.headingQuality, .approximate, "accuracy: \(accuracy)")
+                XCTAssertEqual(state.direction, testCase.expectedCue, "\(testCase.name), accuracy: \(accuracy)")
+                XCTAssertNotEqual(state.direction, .aligned, "\(testCase.name), accuracy: \(accuracy)")
+                XCTAssertNotEqual(state.band, .aligned, "\(testCase.name), accuracy: \(accuracy)")
+                XCTAssertNotEqual(state.band, .close, "\(testCase.name), accuracy: \(accuracy)")
+                XCTAssertGreaterThanOrEqual(state.pulseIntervalSeconds, 0.45)
+                XCTAssertLessThanOrEqual(state.clarity, 0.6)
+                XCTAssertFalse(state.canDiscover)
+            }
+        }
+    }
+
+    func testApproximateHeadingStillStopsForMovementOrStaleSensors() {
+        let moving = GuidanceMapper.map(
+            .init(
+                target: .init(azimuthDegrees: 180, altitudeDegrees: 45, localHourAngleDegrees: 0),
+                aim: .init(azimuthDegrees: 180, altitudeDegrees: 45),
+                headingAccuracyDegrees: 14.5,
+                isMoving: true,
+                isSensorFresh: true,
+                isPractice: false
+            )
+        )
+        let stale = GuidanceMapper.map(
+            .init(
+                target: .init(azimuthDegrees: 180, altitudeDegrees: 45, localHourAngleDegrees: 0),
+                aim: .init(azimuthDegrees: 180, altitudeDegrees: 45),
+                headingAccuracyDegrees: 14.5,
+                isMoving: false,
+                isSensorFresh: false,
+                isPractice: false
+            )
+        )
+        XCTAssertFalse(moving.canGuide)
+        XCTAssertFalse(moving.canDiscover)
+        XCTAssertFalse(stale.canGuide)
+        XCTAssertFalse(stale.canDiscover)
     }
 
     func testDiscoveryToleranceIsCappedAtSixDegrees() {
@@ -223,5 +301,34 @@ final class GuidanceMapperTests: XCTestCase {
         XCTAssertFalse(tracker.update(isEligible: true, at: start))
         XCTAssertFalse(tracker.update(isEligible: false, at: start.addingTimeInterval(0.5)))
         XCTAssertFalse(tracker.update(isEligible: true, at: start.addingTimeInterval(0.6)))
+    }
+
+    func testApproximateTransitionResetsDiscoveryHoldWithoutPausingGuidance() {
+        var tracker = DiscoveryHoldTracker()
+        let start = Date(timeIntervalSince1970: 1_000)
+        let ready = guidance(accuracy: 9)
+        let approximate = guidance(accuracy: 14.5)
+
+        XCTAssertTrue(ready.canGuide)
+        XCTAssertTrue(ready.canDiscover)
+        XCTAssertFalse(tracker.update(isEligible: ready.canDiscover, at: start))
+        XCTAssertTrue(approximate.canGuide)
+        XCTAssertFalse(approximate.canDiscover)
+        XCTAssertFalse(tracker.update(isEligible: approximate.canDiscover, at: start.addingTimeInterval(0.4)))
+        XCTAssertFalse(tracker.update(isEligible: ready.canDiscover, at: start.addingTimeInterval(0.5)))
+        XCTAssertTrue(tracker.update(isEligible: ready.canDiscover, at: start.addingTimeInterval(1.3)))
+    }
+
+    private func guidance(accuracy: Double) -> GuidanceState {
+        GuidanceMapper.map(
+            .init(
+                target: .init(azimuthDegrees: 180, altitudeDegrees: 45, localHourAngleDegrees: 0),
+                aim: .init(azimuthDegrees: 180, altitudeDegrees: 45),
+                headingAccuracyDegrees: accuracy,
+                isMoving: false,
+                isSensorFresh: true,
+                isPractice: false
+            )
+        )
     }
 }

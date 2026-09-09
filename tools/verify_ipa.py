@@ -15,13 +15,19 @@ def main():
         info = plistlib.loads(archive.read(prefix + "Info.plist"))
         assert info["CFBundleIdentifier"] == "com.example.HearStars"
         assert info["CFBundleShortVersionString"] == "0.1.0"
-        assert info["CFBundleVersion"] == "4"
+        assert info["CFBundleVersion"] == "5"
         assert "iPhoneOS" in info["CFBundleSupportedPlatforms"]
         assert archive.getinfo(prefix + info["CFBundleExecutable"]).file_size > 0
         for language in ("ja", "en"):
             strings = plistlib.loads(archive.read(prefix + language + ".lproj/Localizable.strings"))
             assert strings["readiness.calibrating.title"] == (
                 "方角の調整が必要です" if language == "ja" else "Direction needs adjusting"
+            )
+            assert strings["readiness.approximate.title"] == (
+                "おおよその方向を案内しています" if language == "ja" else "Guiding the approximate direction"
+            )
+            assert strings["direction.vicinity"] == (
+                "このあたりです" if language == "ja" else "Around here"
             )
             print(f"{language}: {len(strings)} bundled translations verified")
     print(f"IPA: {info['CFBundleShortVersionString']} ({info['CFBundleVersion']})")
