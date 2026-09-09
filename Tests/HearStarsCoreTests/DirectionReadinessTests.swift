@@ -2,6 +2,33 @@ import XCTest
 @testable import HearStarsCore
 
 final class DirectionReadinessTests: XCTestCase {
+    func testMissingCompassUpdateWaitsInsteadOfRequestingMagneticCalibration() {
+        let accuracies: [Double?] = [nil, 4, 30]
+        for accuracy in accuracies {
+            for timedOut in [false, true] {
+                let state = DirectionReadiness.evaluate(
+                    location: .available, directionHardwareAvailable: true,
+                    sensorIsFresh: true, headingAccuracyDegrees: accuracy,
+                    targetAltitudeDegrees: 35, isMoving: false,
+                    preparationHasTimedOut: timedOut, headingIsFresh: false
+                )
+                assertReadiness(state, timedOut ? .directionDelayed : .checkingDirection)
+                XCTAssertFalse(state.canUseDirection)
+            }
+        }
+    }
+
+    func testFreshBadCompassStillRequiresCalibrationAfterWaiting() {
+        let state = DirectionReadiness.evaluate(
+            location: .available, directionHardwareAvailable: true,
+            sensorIsFresh: true, headingAccuracyDegrees: 18,
+            targetAltitudeDegrees: 35, isMoving: false,
+            preparationHasTimedOut: true, headingIsFresh: true
+        )
+        assertReadiness(state, .calibrating)
+        XCTAssertFalse(state.canUseDirection)
+    }
+
     func testCalibrationBecomesReadyWhenLiveHeadingImprovesToGoodOrFair() {
         assertReadiness(readiness(headingAccuracyDegrees: nil), .calibrating)
         assertReadiness(readiness(headingAccuracyDegrees: 18), .calibrating)

@@ -21,9 +21,9 @@
 "readiness.sensorUnavailable.title" = "Direction guidance is unavailable on this device";
 "readiness.sensorUnavailable.body" = "The required direction sensors are unavailable. Try a supported iPhone, or return to Choose a star.";
 "readiness.checkingDirection.title" = "Checking direction";
-"readiness.checkingDirection.body" = "We are checking your iPhone’s orientation. This message will change when it is ready.";
+"readiness.checkingDirection.body" = "Waiting for a direction update. Slowly turn your iPhone and wait a moment.";
 "readiness.directionDelayed.title" = "Waiting for orientation data";
-"readiness.directionDelayed.body" = "We are waiting for the sensors to respond. You can check again below.";
+"readiness.directionDelayed.body" = "Slowly turn your iPhone. If updates do not arrive, use Check again below.";
 "readiness.calibrating.title" = "Direction needs adjusting";
 "readiness.calibrating.body" = "Move away from magnets and metal, then slowly move your iPhone in a figure eight. Guidance will start automatically when ready.";
 "readiness.moving.title" = "Paused because movement was detected";
@@ -34,6 +34,12 @@
 "readiness.ready.body" = "Direction guidance is available. Point the back of your iPhone toward the sky.";
 "readiness.openSettings" = "Open Settings";
 "readiness.retry" = "Check again";
+"diagnostics.title" = "Troubleshooting details";
+"diagnostics.headingSummary" = "Heading accuracy: ±%@° (guidance needs 10° or less)\nHeading update: %@ s ago (wait after 2 s)\nTime-matched sensor difference: %@°\nGravity alignment error: %@° (2° or less)\nMagnetic calibration: %@\n— means not yet comparable. These values are displayed only, never saved or sent.";
+"diagnostics.magneticUncalibrated" = "Preparing";
+"diagnostics.magneticLow" = "Low";
+"diagnostics.magneticMedium" = "Medium";
+"diagnostics.magneticHigh" = "High";
 
 "mode.group" = "Guidance mode";
 "mode.sound" = "Listen";

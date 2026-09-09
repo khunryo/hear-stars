@@ -387,7 +387,8 @@ final class AppModel: ObservableObject {
             headingAccuracyDegrees: isUsingSimulatedAim ? 0 : sensors.effectiveHeadingAccuracyDegrees,
             targetAltitudeDegrees: selectedObservation?.altitudeDegrees,
             isMoving: sensors.isUnsafeMotion,
-            preparationHasTimedOut: ProcessInfo.processInfo.systemUptime - preparationStartedAt >= 12
+            preparationHasTimedOut: ProcessInfo.processInfo.systemUptime - preparationStartedAt >= 12,
+            headingIsFresh: isUsingSimulatedAim || sensors.headingIsFresh
         )
         guard state != directionReadiness else { return }
         directionReadiness = state

@@ -21,9 +21,9 @@
 "readiness.sensorUnavailable.title" = "この端末では方角を案内できません";
 "readiness.sensorUnavailable.body" = "必要な方向センサーを利用できません。対応するiPhoneでお試しください。星を選ぶ画面へ戻れます。";
 "readiness.checkingDirection.title" = "方角を確認しています";
-"readiness.checkingDirection.body" = "iPhoneの向きと傾きを確認中です。準備ができると、この表示が変わります。";
+"readiness.checkingDirection.body" = "方角の更新を確認中です。ゆっくり向きを変え、少しお待ちください。";
 "readiness.directionDelayed.title" = "向きの情報を待っています";
-"readiness.directionDelayed.body" = "センサーの応答を確認しています。下のボタンで確認し直せます。";
+"readiness.directionDelayed.body" = "ゆっくり向きを変えてください。情報が届かないときは、下のボタンで確認し直せます。";
 "readiness.calibrating.title" = "方角の調整が必要です";
 "readiness.calibrating.body" = "磁石や金属から離れ、iPhoneをゆっくり8の字に動かしてください。整うと自動で案内を始めます。";
 "readiness.moving.title" = "移動を検知したため一時停止中です";
@@ -34,6 +34,12 @@
 "readiness.ready.body" = "方角を案内できます。iPhoneの背面を空へ向けてください。";
 "readiness.openSettings" = "設定を開く";
 "readiness.retry" = "もう一度確認する";
+"diagnostics.title" = "うまくいかないときの確認";
+"diagnostics.headingSummary" = "方角の精度：±%@°（案内の目安は10°以内）\n方角の更新：%@秒前（2秒を超えると更新待ち）\n近い時刻のセンサー間の差：%@°\n傾きの整合差：%@°（2°以内）\n磁気の調整：%@\n— はまだ比較できない項目です。表示だけで、記録・送信はしません。";
+"diagnostics.magneticUncalibrated" = "準備中";
+"diagnostics.magneticLow" = "低";
+"diagnostics.magneticMedium" = "中";
+"diagnostics.magneticHigh" = "良好";
 
 "mode.group" = "案内モード";
 "mode.sound" = "聴く";

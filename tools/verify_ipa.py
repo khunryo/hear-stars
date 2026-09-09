@@ -15,7 +15,9 @@ def main():
         info = plistlib.loads(archive.read(prefix + "Info.plist"))
         assert info["CFBundleIdentifier"] == "com.example.HearStars"
         assert info["CFBundleShortVersionString"] == "0.1.0"
-        assert info["CFBundleVersion"] == "3"
+        assert info["CFBundleVersion"] == "4"
+        assert "iPhoneOS" in info["CFBundleSupportedPlatforms"]
+        assert archive.getinfo(prefix + info["CFBundleExecutable"]).file_size > 0
         for language in ("ja", "en"):
             strings = plistlib.loads(archive.read(prefix + language + ".lproj/Localizable.strings"))
             assert strings["readiness.calibrating.title"] == (

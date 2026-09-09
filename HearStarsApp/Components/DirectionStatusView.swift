@@ -32,11 +32,31 @@ struct DirectionStatusView: View {
                 Button("readiness.retry", action: model.retryDirectionSetup)
                     .frame(minHeight: 44)
             }
+            if state == .calibrating || state == .directionDelayed || state == .checkingDirection {
+                DirectionDiagnosticsView(sensors: model.sensors)
+            }
         }
         .buttonStyle(.plain)
         .tint(Color.hsDiscovery)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .nightPanel()
+    }
+}
+
+/// On-device only; no logging, persistence, or export of location/sensor data.
+private struct DirectionDiagnosticsView: View {
+    @ObservedObject var sensors: SensorService
+
+    var body: some View {
+        DisclosureGroup("diagnostics.title") {
+            Text(verbatim: sensors.headingDiagnosticSummary)
+                .font(.caption)
+                .foregroundStyle(Color.hsSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 4)
+        }
+        .font(.caption)
     }
 }

@@ -23,7 +23,8 @@ public enum DirectionReadiness: String, CaseIterable, Equatable, Sendable {
         headingAccuracyDegrees: Double?,
         targetAltitudeDegrees: Double?,
         isMoving: Bool,
-        preparationHasTimedOut: Bool
+        preparationHasTimedOut: Bool,
+        headingIsFresh: Bool = true
     ) -> Self {
         switch location {
         case .permissionRequired: return .locationPermission
@@ -39,7 +40,9 @@ public enum DirectionReadiness: String, CaseIterable, Equatable, Sendable {
         }
         guard altitude >= 2 else { return .belowHorizon }
         guard !isMoving else { return .moving }
-        guard sensorIsFresh else {
+        // A missing change-driven compass update is not evidence of magnetic
+        // calibration failure. Pause honestly as data waiting, not "figure eight".
+        guard sensorIsFresh && headingIsFresh else {
             return preparationHasTimedOut ? .directionDelayed : .checkingDirection
         }
         switch GuidanceMapper.headingQuality(headingAccuracyDegrees) {

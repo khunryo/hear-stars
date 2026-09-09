@@ -47,6 +47,9 @@ final class SensorService: NSObject, ObservableObject {
     private var lastStableAzimuth: Double?
     private var lastMotionUptime: TimeInterval?
     private var lastHeadingAt: Date?
+    private var lastHeadingUptime: TimeInterval?
+    private var headingPairing = HeadingSamplePairing()
+    private var headingReferenceOffsetDegrees = 0.0
     private var referenceKind: ReferenceKind = .arbitrary
 
     override init() {
@@ -54,7 +57,9 @@ final class SensorService: NSObject, ObservableObject {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyKilometer
         locationManager.distanceFilter = 1_000
-        locationManager.headingFilter = 1.0
+        // Heading updates are change-driven, not a periodic heartbeat. Do not
+        // suppress small changes while the user holds the phone toward a star.
+        locationManager.headingFilter = kCLHeadingFilterNone
         locationManager.headingOrientation = .portrait
         locationManager.showsBackgroundLocationIndicator = false
         authorizationStatus = locationManager.authorizationStatus
@@ -111,6 +116,9 @@ final class SensorService: NSObject, ObservableObject {
         trueHeadingDegrees = nil
         magneticHeadingDegrees = nil
         lastHeadingAt = nil
+        lastHeadingUptime = nil
+        headingPairing.reset()
+        headingReferenceOffsetDegrees = 0
         headingResidualDegrees = nil
         gravityAlignmentErrorDegrees = nil
         magneticAccuracy = .uncalibrated
@@ -120,7 +128,35 @@ final class SensorService: NSObject, ObservableObject {
 
     var motionIsFresh: Bool {
         guard let lastMotionUptime else { return false }
-        return ProcessInfo.processInfo.systemUptime - lastMotionUptime <= 0.25
+        let age = ProcessInfo.processInfo.systemUptime - lastMotionUptime
+        return age >= 0 && age <= 0.25
+    }
+
+    var headingAgeSeconds: TimeInterval? {
+        lastHeadingUptime.map { max(0, ProcessInfo.processInfo.systemUptime - $0) }
+    }
+
+    var headingIsFresh: Bool {
+        guard let age = headingAgeSeconds else { return false }
+        return age <= 2.0
+    }
+
+    var headingDiagnosticSummary: String {
+        func number(_ value: Double?) -> String {
+            guard let value, value.isFinite else { return "—" }
+            return String(format: "%.1f", locale: .current, value)
+        }
+        let magneticKey: String
+        switch magneticAccuracy {
+        case .uncalibrated: magneticKey = "diagnostics.magneticUncalibrated"
+        case .low: magneticKey = "diagnostics.magneticLow"
+        case .medium: magneticKey = "diagnostics.magneticMedium"
+        case .high: magneticKey = "diagnostics.magneticHigh"
+        @unknown default: magneticKey = "diagnostics.magneticUncalibrated"
+        }
+        return L10n.format("diagnostics.headingSummary", number(headingAccuracyDegrees),
+                           number(headingAgeSeconds), number(headingResidualDegrees),
+                           number(gravityAlignmentErrorDegrees), L10n.string(magneticKey))
     }
 
     var directionHardwareAvailable: Bool {
@@ -142,9 +178,9 @@ final class SensorService: NSObject, ObservableObject {
     }
 
     var effectiveHeadingAccuracyDegrees: Double? {
-        guard let lastHeadingAt,
-              abs(lastHeadingAt.timeIntervalSinceNow) <= 2.0,
+        guard headingIsFresh,
               let headingAccuracyDegrees,
+              headingAccuracyDegrees.isFinite,
               headingAccuracyDegrees >= 0,
               referenceKind != .arbitrary else { return nil }
         if referenceKind == .magnetic && trueHeadingDegrees == nil { return nil }
@@ -210,6 +246,10 @@ final class SensorService: NSObject, ObservableObject {
     }
 
     private func consume(_ motion: CMDeviceMotion) {
+        // Freshness must use the measurement time, not a delayed main-queue delivery.
+        let age = ProcessInfo.processInfo.systemUptime - motion.timestamp
+        guard age >= 0, age <= 0.25 else { return }
+        guard lastMotionUptime.map({ motion.timestamp > $0 }) ?? true else { return }
         let raw = Matrix3(motion.attitude.rotationMatrix)
         let gravity = Vector3(motion.gravity)
         let worldDown = Vector3(x: 0, y: 0, z: -1)
@@ -246,21 +286,32 @@ final class SensorService: NSObject, ObservableObject {
         )
         aim = DeviceAim(azimuthDegrees: azimuth, altitudeDegrees: altitude)
         lastMotionAt = Date()
-        lastMotionUptime = ProcessInfo.processInfo.systemUptime
+        lastMotionUptime = motion.timestamp
         magneticAccuracy = motion.magneticField.accuracy
 
         let topInReference = (deviceToReference * Vector3(x: 0, y: 1, z: 0)).normalized
-        if hypot(topInReference.x, topInReference.y) > 0.3, let trueHeadingDegrees {
-            var predicted = AngleMath.normalizeDegrees(
+        let predicted: Double?
+        if hypot(topInReference.x, topInReference.y) > 0.3 {
+            predicted = AngleMath.normalizeDegrees(
                 AngleMath.degrees(atan2(-topInReference.y, topInReference.x))
             )
-            if referenceKind == .magnetic, let magneticHeadingDegrees {
-                predicted = AngleMath.normalizeDegrees(predicted + trueHeadingDegrees - magneticHeadingDegrees)
-            }
-            headingResidualDegrees = abs(AngleMath.signedDegrees(predicted - trueHeadingDegrees))
         } else {
-            headingResidualDegrees = nil
+            predicted = nil
         }
+        headingPairing.record(headingDegrees: predicted, at: motion.timestamp)
+        refreshPairedHeadingResidual()
+    }
+
+    private func refreshPairedHeadingResidual() {
+        guard headingIsFresh, let lastHeadingUptime, let trueHeadingDegrees else {
+            headingResidualDegrees = nil
+            return
+        }
+        // A compass event is compared with motion at its own measurement time,
+        // not with the latest pose after the user has already turned the phone.
+        let headingInReference = AngleMath.normalizeDegrees(trueHeadingDegrees - headingReferenceOffsetDegrees)
+        headingResidualDegrees = headingPairing.residual(headingDegrees: headingInReference,
+                                                       at: lastHeadingUptime)
     }
 }
 
@@ -287,10 +338,17 @@ extension SensorService: CLLocationManagerDelegate {
         guard isRunning,
               newHeading.timestamp >= sessionStartedAt.addingTimeInterval(-2),
               abs(newHeading.timestamp.timeIntervalSinceNow) <= 5 else { return }
+        guard lastHeadingAt.map({ newHeading.timestamp >= $0 }) ?? true else { return }
+        let uptime = ProcessInfo.processInfo.systemUptime + newHeading.timestamp.timeIntervalSinceNow
+        guard uptime <= ProcessInfo.processInfo.systemUptime else { return }
         headingAccuracyDegrees = newHeading.headingAccuracy >= 0 ? newHeading.headingAccuracy : nil
         trueHeadingDegrees = newHeading.trueHeading >= 0 ? newHeading.trueHeading : nil
         magneticHeadingDegrees = newHeading.magneticHeading >= 0 ? newHeading.magneticHeading : nil
         lastHeadingAt = newHeading.timestamp
+        lastHeadingUptime = uptime
+        headingReferenceOffsetDegrees = referenceKind == .magnetic
+            ? (trueHeadingDegrees ?? 0) - (magneticHeadingDegrees ?? 0) : 0
+        refreshPairedHeadingResidual()
     }
 
     func locationManagerShouldDisplayHeadingCalibration(_ manager: CLLocationManager) -> Bool {
