@@ -72,9 +72,9 @@ final class DirectionReadinessTests: XCTestCase {
     func testScreenshotAccuracyIsApproximateWithoutRelaxingOtherGates() {
         assertReadiness(readiness(headingAccuracyDegrees: 14.5), .approximate)
         assertReadiness(readiness(headingAccuracyDegrees: 14.5, isMoving: true), .moving)
-        assertReadiness(readiness(headingAccuracyDegrees: 14.5, sensorIsFresh: false), .checkingDirection)
+        assertReadiness(readiness(sensorIsFresh: false, headingAccuracyDegrees: 14.5), .checkingDirection)
         assertReadiness(
-            readiness(headingAccuracyDegrees: 14.5, sensorIsFresh: false, preparationHasTimedOut: true),
+            readiness(sensorIsFresh: false, headingAccuracyDegrees: 14.5, preparationHasTimedOut: true),
             .directionDelayed
         )
     }
