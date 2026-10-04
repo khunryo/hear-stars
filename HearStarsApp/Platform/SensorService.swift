@@ -50,7 +50,8 @@ final class SensorService: NSObject, ObservableObject {
     private var lastHeadingUptime: TimeInterval?
     private var headingPairing = HeadingSamplePairing()
     private var headingReferenceOffsetDegrees = 0.0
-    private var referenceKind: ReferenceKind = .arbitrary
+    private var didAllowSystemCalibration = false
+    private var referenceKind: HeadingReference = .arbitrary
 
     override init() {
         super.init()
@@ -103,6 +104,8 @@ final class SensorService: NSObject, ObservableObject {
         wantsLocationUpdates = false
         locationManager.stopUpdatingLocation()
         locationManager.stopUpdatingHeading()
+        locationManager.dismissHeadingCalibrationDisplay()
+        didAllowSystemCalibration = false
         motionManager.stopDeviceMotionUpdates()
         if CMMotionActivityManager.isActivityAvailable() {
             activityManager.stopActivityUpdates()
@@ -141,11 +144,8 @@ final class SensorService: NSObject, ObservableObject {
         return age <= 2.0
     }
 
-    var headingDiagnosticSummary: String {
-        func number(_ value: Double?) -> String {
-            guard let value, value.isFinite else { return "—" }
-            return String(format: "%.1f", locale: .current, value)
-        }
+    func captureDirectionSnapshot() -> DirectionSensorSnapshot {
+        let now = ProcessInfo.processInfo.systemUptime
         let magneticKey: String
         switch magneticAccuracy {
         case .uncalibrated: magneticKey = "diagnostics.magneticUncalibrated"
@@ -154,9 +154,14 @@ final class SensorService: NSObject, ObservableObject {
         case .high: magneticKey = "diagnostics.magneticHigh"
         @unknown default: magneticKey = "diagnostics.magneticUncalibrated"
         }
-        return L10n.format("diagnostics.headingSummary", number(headingAccuracyDegrees),
-                           number(headingAgeSeconds), number(headingResidualDegrees),
-                           number(gravityAlignmentErrorDegrees), L10n.string(magneticKey))
+        return DirectionSensorSnapshot(
+            uptime: now, motionAge: lastMotionUptime.map { now - $0 },
+            headingAge: lastHeadingUptime.map { now - $0 }, aim: aim, isMoving: isUnsafeMotion,
+            rawAccuracy: headingAccuracyDegrees, residual: headingResidualDegrees,
+            gravityError: gravityAlignmentErrorDegrees, reference: referenceKind,
+            hasTrueHeading: trueHeadingDegrees != nil, magneticKey: magneticKey,
+            magneticCalibrated: magneticAccuracy != .uncalibrated
+        )
     }
 
     var directionHardwareAvailable: Bool {
@@ -178,20 +183,7 @@ final class SensorService: NSObject, ObservableObject {
     }
 
     var effectiveHeadingAccuracyDegrees: Double? {
-        guard headingIsFresh,
-              let headingAccuracyDegrees,
-              headingAccuracyDegrees.isFinite,
-              headingAccuracyDegrees >= 0,
-              referenceKind != .arbitrary else { return nil }
-        if referenceKind == .magnetic && trueHeadingDegrees == nil { return nil }
-
-        var conservative = headingAccuracyDegrees
-        if let headingResidualDegrees { conservative = max(conservative, headingResidualDegrees) }
-        if magneticAccuracy == .uncalibrated { conservative = max(conservative, 30.0) }
-        if let gravityAlignmentErrorDegrees, gravityAlignmentErrorDegrees > 2.0 {
-            conservative = max(conservative, 30.0)
-        }
-        return conservative
+        captureDirectionSnapshot().assessment.effectiveAccuracyDegrees
     }
 
     private func startDeviceMotion() {
@@ -349,10 +341,20 @@ extension SensorService: CLLocationManagerDelegate {
         headingReferenceOffsetDegrees = referenceKind == .magnetic
             ? (trueHeadingDegrees ?? 0) - (magneticHeadingDegrees ?? 0) : 0
         refreshPairedHeadingResidual()
+        if didAllowSystemCalibration && !HeadingAssessment.shouldDisplaySystemCalibration(
+            headingAccuracyDegrees: headingAccuracyDegrees, isRunning: isRunning
+        ) {
+            locationManager.dismissHeadingCalibrationDisplay()
+            didAllowSystemCalibration = false
+        }
     }
 
     func locationManagerShouldDisplayHeadingCalibration(_ manager: CLLocationManager) -> Bool {
-        headingAccuracyDegrees.map { $0 > 10.0 } ?? true
+        let allowed = HeadingAssessment.shouldDisplaySystemCalibration(
+            headingAccuracyDegrees: headingAccuracyDegrees, isRunning: isRunning
+        )
+        didAllowSystemCalibration = allowed
+        return allowed
     }
 }
 
@@ -392,11 +394,6 @@ private struct Vector3 {
     }
 }
 
-private enum ReferenceKind {
-    case trueNorth
-    case magnetic
-    case arbitrary
-}
 
 private struct Matrix3 {
     let m11: Double; let m12: Double; let m13: Double

@@ -21,7 +21,7 @@ struct DirectionStatusView: View {
                         .foregroundStyle(state.canConfirmAlignment ? Color.hsDiscovery : Color.hsGuide)
                         .accessibilityHidden(true)
                 }
-                DirectionStatusCopy(state: state)
+                DirectionStatusCopy(state: state, overridePrefix: model.directionDiagnostics?.copyPrefix)
             }
             .accessibilityElement(children: .combine)
 
@@ -32,8 +32,16 @@ struct DirectionStatusView: View {
                 Button("readiness.retry", action: model.retryDirectionSetup)
                     .frame(minHeight: 44)
             }
-            if state == .calibrating || state == .approximate || state == .directionDelayed || state == .checkingDirection {
-                DirectionDiagnosticsView(sensors: model.sensors)
+            if !model.isUsingSimulatedAim, let current = model.directionDiagnostics,
+               state != .ready || model.lastStopDiagnostics != nil {
+                DisclosureGroup("diagnostics.title", isExpanded: $model.diagnosticsExpanded) {
+                    DirectionDiagnosticDetails(
+                        current: current, lastStop: model.lastStopDiagnostics,
+                        build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+                    )
+                    .padding(.top, 4)
+                }
+                .font(.caption)
             }
         }
         .buttonStyle(.plain)
@@ -41,22 +49,5 @@ struct DirectionStatusView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .nightPanel()
-    }
-}
-
-/// On-device only; no logging, persistence, or export of location/sensor data.
-private struct DirectionDiagnosticsView: View {
-    @ObservedObject var sensors: SensorService
-
-    var body: some View {
-        DisclosureGroup("diagnostics.title") {
-            Text(verbatim: sensors.headingDiagnosticSummary)
-                .font(.caption)
-                .foregroundStyle(Color.hsSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 4)
-        }
-        .font(.caption)
     }
 }

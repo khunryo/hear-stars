@@ -2,6 +2,12 @@ name: iPhone test build (free standard Mac)
 
 on:
   workflow_dispatch:
+    inputs:
+      save_download:
+        description: 'Save IPA/PNGs only after checking the account artifact storage allowance'
+        type: boolean
+        required: false
+        default: false
   push:
     branches: [codex/readiness-return-flow]
     paths:
@@ -53,7 +59,7 @@ jobs:
           xcodegen generate
 
       - name: Test compass timing and readiness regressions first
-        run: swift test --filter 'GuidanceMapperTests|DirectionReadinessTests'
+        run: swift test --filter 'HeadingAssessmentTests|DirectionReadinessTests'
 
       - name: Test astronomy and direction readiness
         run: swift test
@@ -88,6 +94,8 @@ jobs:
             HearStarsApp/App/GuidanceMode.swift \
             HearStarsApp/Design/NightPalette.swift \
             HearStarsApp/Components/DirectionStatusCopy.swift \
+            HearStarsApp/Components/DirectionDiagnosticSnapshot.swift \
+            HearStarsApp/Components/DirectionDiagnosticDetails.swift \
             tools/verify_readiness_ui.swift \
             -o build/verify-readiness-ui
           build/verify-readiness-ui "$APP_PATH" build/readiness-ui
@@ -114,9 +122,10 @@ jobs:
           PY
 
       - name: Save IPA and readiness screenshots
+        if: github.event_name == 'workflow_dispatch' && inputs.save_download == true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: HearStars-build5-${{ github.run_number }}
+          name: HearStars-build6-${{ github.run_number }}
           path: |
             build/ios/ipa/HearStars-unsigned.ipa
             build/readiness-ui/*.png

@@ -11,7 +11,7 @@ struct FinderView: View {
         GeometryReader { geometry in
             VStack(spacing: 8) {
                 header
-                if dynamicTypeSize.isAccessibilitySize || geometry.size.height < 570 {
+                if model.diagnosticsExpanded || dynamicTypeSize.isAccessibilitySize || geometry.size.height < 570 {
                     ScrollView {
                         content(lensHeight: 140)
                     }
@@ -87,7 +87,7 @@ struct FinderView: View {
     }
 
     private var statusTitle: String {
-        if model.sensors.isUnsafeMotion {
+        if (model.directionDiagnostics?.sensors.isMoving ?? false) {
             return L10n.string("finder.pausedMoving")
         }
 
@@ -105,12 +105,12 @@ struct FinderView: View {
             return L10n.string("finder.belowHorizonSimple")
         }
 
-        if !model.isUsingSimulatedAim && !model.sensors.motionIsFresh {
+        if !model.isUsingSimulatedAim && !(model.directionDiagnostics?.sensors.motionIsFresh ?? false) {
             return L10n.string("finder.waitingSensors")
         }
 
         if !model.isUsingSimulatedAim {
-            let accuracy = model.sensors.effectiveHeadingAccuracyDegrees
+            let accuracy = model.directionDiagnostics?.sensors.assessment.effectiveAccuracyDegrees
             if GuidanceMapper.headingQuality(accuracy) == .unavailable {
                 return L10n.string("finder.calibrateSimple")
             }
@@ -143,11 +143,11 @@ struct FinderView: View {
     private var displayGuidance: GuidanceState? {
         guard model.directionReadiness.canUseDirection else { return nil }
         guard let guidance = model.guidance, guidance.canGuide else { return nil }
-        guard !model.sensors.isUnsafeMotion else { return nil }
+        guard !(model.directionDiagnostics?.sensors.isMoving ?? false) else { return nil }
         guard model.isUsingSimulatedAim || (
-            model.sensors.motionIsFresh
+            (model.directionDiagnostics?.sensors.motionIsFresh ?? false)
                 && GuidanceMapper.headingQuality(
-                    model.sensors.effectiveHeadingAccuracyDegrees
+                    model.directionDiagnostics?.sensors.assessment.effectiveAccuracyDegrees
                 ) != .unavailable
         ) else { return nil }
         if !model.isPractice {
@@ -160,12 +160,12 @@ struct FinderView: View {
 
     private var shouldOfferPracticeFallback: Bool {
         guard !model.isPractice,
-              !model.sensors.isUnsafeMotion else { return false }
+              !(model.directionDiagnostics?.sensors.isMoving ?? false) else { return false }
         return !model.hasUsableLiveLocation
             || model.sensors.movementSafetyStatus != .ready
-            || !model.sensors.motionIsFresh
+            || !(model.directionDiagnostics?.sensors.motionIsFresh ?? false)
             || GuidanceMapper.headingQuality(
-                model.sensors.effectiveHeadingAccuracyDegrees
+                model.directionDiagnostics?.sensors.assessment.effectiveAccuracyDegrees
             ) == .unavailable
     }
 

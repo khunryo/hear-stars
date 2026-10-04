@@ -20,7 +20,7 @@ struct ConstellationView: View {
                     Text("constellation.title")
                         .font(.headline)
                 }
-                if dynamicTypeSize.isAccessibilitySize || geometry.size.height < 660 {
+                if model.diagnosticsExpanded || dynamicTypeSize.isAccessibilitySize || geometry.size.height < 660 {
                     ScrollView { content(fieldHeight: 200) }
                 } else {
                     content(fieldHeight: nil)
@@ -89,7 +89,7 @@ struct ConstellationView: View {
 
     private func pointingOffset(in size: CGSize) -> CGSize {
         guard let target = model.selectedObservation,
-              let aim = model.sensors.aim else { return .zero }
+              let aim = model.directionDiagnostics?.sensors.aim else { return .zero }
         let azimuthError = signedDegrees(target.azimuthDegrees - aim.azimuthDegrees)
         let altitudeError = target.altitudeDegrees - aim.altitudeDegrees
         let x = max(-1.0, min(1.0, azimuthError / 42.0))

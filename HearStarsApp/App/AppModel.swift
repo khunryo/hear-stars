@@ -14,6 +14,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var observations: [String: HorizontalCoordinate] = [:]
     @Published private(set) var guidance: GuidanceState?
     @Published private(set) var directionReadiness: DirectionReadiness = .locating
+    @Published private var diagnosticHistory = DirectionDiagnosticHistory()
+    @Published var diagnosticsExpanded = false
     @Published private(set) var simulatedAim = DeviceAim(azimuthDegrees: 0, altitudeDegrees: 20)
 
     let sensors = SensorService()
@@ -29,6 +31,9 @@ final class AppModel: ObservableObject {
     private var lastAnnouncementAt = Date.distantPast
     private var wasPausedForMotion = false
     private var preparationStartedAt = ProcessInfo.processInfo.systemUptime
+
+    var directionDiagnostics: DirectionDiagnosticSnapshot? { diagnosticHistory.current }
+    var lastStopDiagnostics: DirectionDiagnosticSnapshot? { diagnosticHistory.lastStop }
 
     private static let practiceObserver = ObserverLocation(
         latitudeDegrees: 35.6812,
@@ -89,6 +94,7 @@ final class AppModel: ObservableObject {
     }
 
     func stop() {
+        clearDirectionDiagnostics()
         timer?.invalidate()
         timer = nil
         sensors.stop()
@@ -97,6 +103,7 @@ final class AppModel: ObservableObject {
     }
 
     func enterBackground() {
+        clearDirectionDiagnostics()
         sensors.stop()
         audio.stop()
         haptics.shutdown()
@@ -125,6 +132,7 @@ final class AppModel: ObservableObject {
     }
 
     func startFinding(_ star: Star) {
+        clearDirectionDiagnostics()
         stopPulses()
         isPractice = false
         simulatorEnabled = false
@@ -176,6 +184,7 @@ final class AppModel: ObservableObject {
     }
 
     func returnToPicker() {
+        clearDirectionDiagnostics()
         sensors.stop()
         audio.stop()
         haptics.stop()
@@ -191,6 +200,7 @@ final class AppModel: ObservableObject {
     }
 
     func retryDirectionSetup() {
+        clearDirectionDiagnostics()
         stopPulses()
         holdTracker.reset()
         preparationStartedAt = ProcessInfo.processInfo.systemUptime
@@ -236,6 +246,7 @@ final class AppModel: ObservableObject {
     }
 
     func showConstellation() {
+        clearDirectionDiagnostics()
         stopPulses()
         preparationStartedAt = ProcessInfo.processInfo.systemUptime
         directionReadiness = .checkingDirection
@@ -245,6 +256,7 @@ final class AppModel: ObservableObject {
     }
 
     func returnToDiscovery() {
+        clearDirectionDiagnostics()
         sensors.stop()
         stopPulses()
         guidance = nil
@@ -282,7 +294,7 @@ final class AppModel: ObservableObject {
             return
         }
 
-        if sensors.isUnsafeMotion {
+        if directionDiagnostics?.sensors.isMoving == true {
             guidance = nil
             if !wasPausedForMotion {
                 announce(L10n.string("finder.pausedMoving"), force: true)
@@ -302,9 +314,10 @@ final class AppModel: ObservableObject {
             sensorIsFresh = true
             headingAccuracy = 0
         } else {
-            aim = sensors.aim
-            sensorIsFresh = sensors.motionIsFresh && sensors.headingIsFresh
-            headingAccuracy = sensors.effectiveHeadingAccuracyDegrees
+            let snapshot = directionDiagnostics?.sensors
+            aim = snapshot?.aim
+            sensorIsFresh = snapshot?.motionIsFresh == true && snapshot?.headingIsFresh == true
+            headingAccuracy = snapshot?.assessment.effectiveAccuracyDegrees
         }
 
         guard let aim else {
@@ -319,7 +332,7 @@ final class AppModel: ObservableObject {
                 target: target,
                 aim: aim,
                 headingAccuracyDegrees: headingAccuracy,
-                isMoving: sensors.isUnsafeMotion,
+                isMoving: directionDiagnostics?.sensors.isMoving ?? false,
                 isSensorFresh: sensorIsFresh,
                 isPractice: isPractice
             )
@@ -383,19 +396,32 @@ final class AppModel: ObservableObject {
             @unknown default: location = .restricted
             }
         }
+        let snapshot = sensors.captureDirectionSnapshot()
         let state = DirectionReadiness.evaluate(
             location: location,
             directionHardwareAvailable: isUsingSimulatedAim || sensors.directionHardwareAvailable,
-            sensorIsFresh: isUsingSimulatedAim || (sensors.motionIsFresh && sensors.aim != nil),
-            headingAccuracyDegrees: isUsingSimulatedAim ? 0 : sensors.effectiveHeadingAccuracyDegrees,
+            sensorIsFresh: isUsingSimulatedAim || (snapshot.motionIsFresh && snapshot.aim != nil),
+            headingAccuracyDegrees: isUsingSimulatedAim ? 0 : snapshot.assessment.effectiveAccuracyDegrees,
             targetAltitudeDegrees: selectedObservation?.altitudeDegrees,
-            isMoving: sensors.isUnsafeMotion,
+            isMoving: snapshot.isMoving,
             preparationHasTimedOut: ProcessInfo.processInfo.systemUptime - preparationStartedAt >= 12,
-            headingIsFresh: isUsingSimulatedAim || sensors.headingIsFresh
+            headingIsFresh: isUsingSimulatedAim || snapshot.headingIsFresh
         )
-        guard state != directionReadiness else { return }
+        let previous = directionDiagnostics
+        let diagnostic = DirectionDiagnosticSnapshot(state: state, sensors: snapshot)
+        var history = diagnosticHistory
+        history.record(diagnostic)
+        diagnosticHistory = history
+        guard state != directionReadiness || previous?.reasonKey != diagnostic.reasonKey else { return }
         directionReadiness = state
-        announce(L10n.string(state.titleLocalizationKey), force: false)
+        announce(L10n.string(diagnostic.reasonKey), force: false)
+    }
+
+    private func clearDirectionDiagnostics() {
+        var history = diagnosticHistory
+        history.clear()
+        diagnosticHistory = history
+        diagnosticsExpanded = false
     }
 
     private func emitPulseIfNeeded(_ state: GuidanceState) {
@@ -421,6 +447,7 @@ final class AppModel: ObservableObject {
     }
 
     private func completeDiscovery() {
+        clearDirectionDiagnostics()
         audio.stop()
         haptics.stop()
         audio.playDiscovery(for: selectedStar)

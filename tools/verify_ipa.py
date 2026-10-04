@@ -15,7 +15,7 @@ def main():
         info = plistlib.loads(archive.read(prefix + "Info.plist"))
         assert info["CFBundleIdentifier"] == "com.example.HearStars"
         assert info["CFBundleShortVersionString"] == "0.1.0"
-        assert info["CFBundleVersion"] == "5"
+        assert info["CFBundleVersion"] == "6"
         assert "iPhoneOS" in info["CFBundleSupportedPlatforms"]
         assert archive.getinfo(prefix + info["CFBundleExecutable"]).file_size > 0
         for language in ("ja", "en"):
@@ -29,6 +29,10 @@ def main():
             assert strings["direction.vicinity"] == (
                 "このあたりです" if language == "ja" else "Around here"
             )
+            assert strings["sensorIssue.motionWaiting.title"] == (
+                "傾きの更新を待っています" if language == "ja" else "Waiting for tilt updates"
+            )
+            assert strings["diagnostics.lastStop"]
             print(f"{language}: {len(strings)} bundled translations verified")
     print(f"IPA: {info['CFBundleShortVersionString']} ({info['CFBundleVersion']})")
     print(f"Size: {path.stat().st_size:,} bytes")

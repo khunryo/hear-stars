@@ -6,9 +6,10 @@ import SwiftUI
 struct DirectionStatusCopy: View {
     let state: DirectionReadiness
     var bundle: Bundle = .main
+    var overridePrefix: String? = nil
 
-    var title: String { L10n.string(state.titleLocalizationKey, bundle: bundle) }
-    var detail: String { L10n.string(state.bodyLocalizationKey, bundle: bundle) }
+    var title: String { L10n.string(overridePrefix.map { $0 + ".title" } ?? state.titleLocalizationKey, bundle: bundle) }
+    var detail: String { L10n.string(overridePrefix.map { $0 + ".body" } ?? state.bodyLocalizationKey, bundle: bundle) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
