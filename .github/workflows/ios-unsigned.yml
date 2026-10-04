@@ -32,8 +32,8 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
       HOMEBREW_NO_AUTO_UPDATE: '1'
-      # Storage checked 2026-10-04: 0 GB used / 0.5 GB included; billable $0.
-      SAVE_DOWNLOAD: 'true'
+      # Download obtained; recheck current storage allowance before enabling again.
+      SAVE_DOWNLOAD: 'false'
     steps:
       - name: Check out source without saving credentials
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
