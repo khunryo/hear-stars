@@ -55,7 +55,7 @@ jobs:
           xcodegen generate
 
       - name: Test compass timing and readiness regressions first
-        run: swift test --filter 'HeadingAssessmentTests|DirectionReadinessTests'
+        run: swift test --filter 'SkyProjectionTests|HeadingAssessmentTests|DirectionReadinessTests'
 
       - name: Test astronomy and direction readiness
         run: swift test
