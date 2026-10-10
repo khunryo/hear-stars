@@ -10,10 +10,17 @@ struct SkyField: View {
     var cameraFieldOfView: Double? = nil
     var cameraAspectRatio: Double? = nil
     var bundle: Bundle = .main
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .body) private var selectedLabelSize = 14.0
+    @ScaledMetric(relativeTo: .caption) private var neighborLabelSize = 11.0
+    @State private var stillPose: SkyPose?
+    @State private var stillObservations: [String: HorizontalCoordinate] = [:]
 
     var body: some View {
         Canvas { context, size in
-            guard let pose else { return }
+            guard let livePose = pose,
+                  let pose = reduceMotion ? stillPose : livePose else { return }
+            let fieldObservations = reduceMotion ? stillObservations : observations
             let viewport: SkyViewport
             if let fov = cameraFieldOfView, let aspect = cameraAspectRatio {
                 viewport = .camera(width: size.width, height: size.height,
@@ -23,7 +30,7 @@ struct SkyField: View {
             }
             var points: [String: CGPoint] = [:]
             for star in SkyCatalog.stars where showNeighbors || star.id == selectedStarID {
-                guard let target = observations[star.id],
+                guard let target = fieldObservations[star.id],
                       let point = SkyProjection.project(target, pose: pose, viewport: viewport),
                       (-2...3).contains(point.x), (-2...3).contains(point.y) else { continue }
                 points[star.id] = CGPoint(x: point.x * size.width, y: point.y * size.height)
@@ -54,20 +61,27 @@ struct SkyField: View {
                     context.stroke(Path(ellipseIn: CGRect(x: p.x - 12, y: p.y - 12, width: 24, height: 24)),
                                    with: .color(.hsDiscovery.opacity(0.8)), lineWidth: 0.8)
                 }
-                let label = CGPoint(x: min(max(p.x, 65), size.width - 65), y: p.y + 24)
+                let scale = selectedLabelSize / 14
+                let margin = min(size.width / 2, 65 * scale)
+                let label = CGPoint(x: min(max(p.x, margin), size.width - margin), y: p.y + 24 * scale)
                 guard label.y < size.height - 12,
                       selected || (star.visualMagnitude <= 3.6 && !labelCenters.contains(where: {
-                          abs($0.x - label.x) < 95 && abs($0.y - label.y) < 25
+                          abs($0.x - label.x) < 95 * scale && abs($0.y - label.y) < 25 * scale
                       })) else { continue }
                 context.draw(Text(verbatim: L10n.string(star.nameKey, bundle: bundle))
-                    .font(.system(size: selected ? 14 : 11, weight: selected ? .medium : .regular))
+                    .font(.system(size: selected ? selectedLabelSize : neighborLabelSize, weight: selected ? .medium : .regular))
                     .foregroundStyle(selected ? Color.hsText : .hsSecondary), at: label)
                 labelCenters.append(label)
             }
         }
         .clipped()
         .accessibilityHidden(true)
+        .onAppear { captureStillField() }
+        .onChange(of: pose) { _, _ in if stillPose == nil { captureStillField() } }
+        .onChange(of: selectedStarID) { _, _ in captureStillField() }
+        .onChange(of: reduceMotion) { _, _ in captureStillField() }
     }
+    private func captureStillField() { stillPose = pose; stillObservations = observations }
 }
 
 struct SkyReticle: View {

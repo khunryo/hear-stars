@@ -16,6 +16,8 @@ def main():
         assert info["CFBundleIdentifier"] == "com.example.HearStars"
         assert info["CFBundleShortVersionString"] == "0.1.0"
         assert info["CFBundleVersion"] == "7"
+        assert info["MinimumOSVersion"] == "17.0"
+        assert not any(name.endswith(".mobileprovision") for name in archive.namelist())
         assert info["NSCameraUsageDescription"]
         assert info["UISupportedInterfaceOrientations"] == ["UIInterfaceOrientationPortrait"]
         assert "iPhoneOS" in info["CFBundleSupportedPlatforms"]
@@ -35,6 +37,10 @@ def main():
                 "傾きの更新を待っています" if language == "ja" else "Waiting for tilt updates"
             )
             assert strings["diagnostics.lastStop"]
+            assert strings["sky.title"] and strings["sky.alignInstruction"] and strings["sky.nextStar"]
+            assert strings["sky.stillHint"] and strings["sky.credits"]
+            usage = plistlib.loads(archive.read(prefix + language + ".lproj/InfoPlist.strings"))
+            assert usage["NSCameraUsageDescription"]
             print(f"{language}: {len(strings)} bundled translations verified")
     print(f"IPA: {info['CFBundleShortVersionString']} ({info['CFBundleVersion']})")
     print(f"Size: {path.stat().st_size:,} bytes")

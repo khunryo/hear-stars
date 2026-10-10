@@ -212,6 +212,8 @@
 "star.rigel" = "Rigel";
 
 "sky.title" = "Explore the sky";
+"sky.stillHint" = "Reduce Motion: a still chart centered on the selected star, not linked to phone direction or camera.";
+"sky.refreshStill" = "Refresh still chart";
 "sky.open" = "Open sky chart";
 "sky.backToFinding" = "Back to finding";
 "sky.hint" = "Move your phone to explore calculated star positions. Original lines connect selected stars.";

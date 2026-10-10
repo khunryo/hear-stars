@@ -6,10 +6,12 @@ struct ConstellationView: View {
     @StateObject private var camera = CameraPreviewService()
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var cameraWanted = false
     @State private var visible = false
     @State private var aligning = false
     @State private var alignmentFailed = false
+    @State private var stillRevision = 0
 
     var body: some View {
         GeometryReader { geometry in
@@ -43,6 +45,7 @@ struct ConstellationView: View {
             else { camera.stop() }
         }
         .onChange(of: camera.state) { _, state in if state != .running { aligning = false } }
+        .onChange(of: reduceMotion) { _, enabled in if enabled { cameraWanted = false; camera.stop() } }
         .onChange(of: model.directionReadiness) { _, readiness in
             if !readiness.canUseDirection { aligning = false }
         }
@@ -53,12 +56,13 @@ struct ConstellationView: View {
             DirectionStatusView(model: model)
             ZStack {
                 Color.hsNight
-                if camera.state == .running { CameraPreview(session: camera.session) }
+                if camera.state == .running && !reduceMotion { CameraPreview(session: camera.session) }
                 if !aligning {
-                    SkyField(observations: model.observations, pose: model.skyPose,
+                    SkyField(observations: model.observations, pose: chartPose,
                              selectedStarID: model.selectedStarID,
                              cameraFieldOfView: camera.metrics?.landscapeFieldOfView,
                              cameraAspectRatio: camera.metrics?.landscapeAspectRatio)
+                        .id(stillRevision)
                 } else { SkyReticle() }
                 if model.skyPose == nil {
                     Text("sky.sensorPaused").font(.subheadline).multilineTextAlignment(.center)
@@ -74,25 +78,30 @@ struct ConstellationView: View {
                 if let group = SkyCatalog.constellation(for: model.selectedStarID) {
                     Text(LocalizedStringKey(group.nameKey)).font(.subheadline).foregroundStyle(Color.hsSecondary)
                 }
-                Text("sky.hint").font(.caption).foregroundStyle(Color.hsSecondary).multilineTextAlignment(.center)
+                Text(LocalizedStringKey(reduceMotion ? "sky.stillHint" : "sky.hint"))
+                    .font(.caption).foregroundStyle(Color.hsSecondary).multilineTextAlignment(.center)
             }.accessibilityElement(children: .combine)
             if aligning {
                 Text(L10n.format("sky.alignInstruction", L10n.string(model.selectedStar.nameKey)))
                     .font(.subheadline).multilineTextAlignment(.center)
                 if alignmentFailed { Text("sky.alignTooFar").font(.caption).foregroundStyle(Color.hsGuide) }
                 HStack {
-                    Button("sky.alignCancel") { aligning = false }
+                    Button("sky.alignCancel") { aligning = false }.frame(minHeight: 44)
                     Spacer()
                     Button("sky.alignConfirm") {
                         if model.alignSkyToSelectedStar() { aligning = false }
                         else { alignmentFailed = true }
-                    }.disabled(!model.directionReadiness.canUseDirection)
+                    }.frame(minHeight: 44).disabled(!model.directionReadiness.canUseDirection)
                 }.frame(minHeight: 44)
             } else {
                 HStack {
-                    Button { cameraWanted.toggle() } label: {
-                        Label(LocalizedStringKey(cameraWanted ? "sky.cameraOff" : "sky.cameraOn"), systemImage: "camera")
-                    }.frame(minHeight: 44)
+                    if reduceMotion {
+                        Button("sky.refreshStill") { stillRevision += 1 }.frame(minHeight: 44)
+                    } else {
+                        Button { cameraWanted.toggle() } label: {
+                            Label(LocalizedStringKey(cameraWanted ? "sky.cameraOff" : "sky.cameraOn"), systemImage: "camera")
+                        }.frame(minHeight: 44)
+                    }
                     Spacer()
                     if camera.state == .running && !model.isPractice {
                         Button("sky.align") {
@@ -142,11 +151,16 @@ struct ConstellationView: View {
     }
 
     private func startCameraIfVisible() {
-        guard visible, cameraWanted, scenePhase == .active else { return }
+        guard visible, cameraWanted, !reduceMotion, scenePhase == .active else { return }
         Task {
             // Recheck inside the queued task: leaving the view may have won the race.
-            guard visible, cameraWanted, scenePhase == .active else { return }
+            guard visible, cameraWanted, !reduceMotion, scenePhase == .active else { return }
             await camera.start()
         }
+    }
+    private var chartPose: SkyPose? {
+        guard let live = model.skyPose else { return nil }
+        guard reduceMotion, let target = model.selectedObservation else { return live }
+        return SkyPose(aim: .init(azimuthDegrees: target.azimuthDegrees, altitudeDegrees: target.altitudeDegrees))
     }
 }
