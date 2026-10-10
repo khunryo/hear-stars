@@ -15,7 +15,9 @@ def main():
         info = plistlib.loads(archive.read(prefix + "Info.plist"))
         assert info["CFBundleIdentifier"] == "com.example.HearStars"
         assert info["CFBundleShortVersionString"] == "0.1.0"
-        assert info["CFBundleVersion"] == "6"
+        assert info["CFBundleVersion"] == "7"
+        assert info["NSCameraUsageDescription"]
+        assert info["UISupportedInterfaceOrientations"] == ["UIInterfaceOrientationPortrait"]
         assert "iPhoneOS" in info["CFBundleSupportedPlatforms"]
         assert archive.getinfo(prefix + info["CFBundleExecutable"]).file_size > 0
         for language in ("ja", "en"):

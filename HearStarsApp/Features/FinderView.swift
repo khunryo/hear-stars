@@ -32,11 +32,22 @@ struct FinderView: View {
                 guidance: displayGuidance,
                 reduceMotion: reduceMotion || displayGuidance == nil
             )
+            .overlay {
+                SkyField(observations: model.observations, pose: model.skyPose,
+                    selectedStarID: model.selectedStarID,
+                    showNeighbors: (displayGuidance?.angularSeparationDegrees ?? 180) <= 20)
+            }
             .frame(height: lensHeight)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityHidden(true)
 
             if model.directionReadiness.canUseDirection { status }
+
+            Button(action: model.showConstellation) {
+                Label("sky.open", systemImage: "sparkles").font(.subheadline).frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.hsText)
 
             VStack(spacing: 7) {
                 Label(

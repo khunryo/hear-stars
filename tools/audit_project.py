@@ -15,7 +15,7 @@ LOCALIZATION_PATTERN = re.compile(r'^\s*"([^"]+)"\s*=\s*"', re.MULTILINE)
 KEY_PREFIXES = (
     "app.", "common.", "mode.", "practice.", "location.", "picker.",
     "safety.", "calibration.", "accuracy.", "finder.", "direction.",
-    "discovery.", "compass.", "star.", "readiness.", "constellation.",
+    "discovery.", "compass.", "star.", "readiness.", "constellation.", "sky.", "skyStar.",
 )
 
 
@@ -71,6 +71,7 @@ def check_localizations() -> None:
         "CFBundleDisplayName",
         "NSLocationWhenInUseUsageDescription",
         "NSMotionUsageDescription",
+        "NSCameraUsageDescription",
     }
     require(info_ja == info_en == expected_info, "JA/EN InfoPlist keys are incomplete or differ")
 
@@ -123,9 +124,10 @@ def check_privacy_and_scope() -> None:
     )
     for forbidden in (
         "URLSession", "import Network", "Firebase", "Analytics", "AdMob",
-        "import ARKit", "AVCaptureSession", "NSCameraUsageDescription",
+        "import ARKit", "AVCapturePhotoOutput", "AVCaptureMovieFileOutput",
+        "AVCaptureVideoDataOutput", "PHPhotoLibrary", "for: .audio",
     ):
-        require(forbidden not in project_text, f"Unexpected Phase 1 capability: {forbidden}")
+        require(forbidden not in project_text, f"Unexpected recording/network capability: {forbidden}")
 
 
 def check_readme_links() -> None:

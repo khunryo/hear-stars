@@ -1,198 +1,152 @@
-import CoreLocation
 import HearStarsCore
 import SwiftUI
 
 struct ConstellationView: View {
     @ObservedObject var model: AppModel
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @StateObject private var camera = CameraPreviewService()
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var cameraWanted = false
+    @State private var visible = false
+    @State private var aligning = false
+    @State private var alignmentFailed = false
 
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 8) {
                 HStack {
-                    Button(action: model.returnToDiscovery) {
-                        Label("constellation.backToResult", systemImage: "chevron.left")
-                            .font(.subheadline)
-                            .frame(minHeight: 44)
+                    Button(action: model.leaveSky) {
+                        Label(LocalizedStringKey(model.skyReturnRoute == .finder ? "sky.backToFinding" : "constellation.backToResult"),
+                              systemImage: "chevron.left")
+                            .font(.subheadline).frame(minHeight: 44)
                     }
                     Spacer()
-                    Text("constellation.title")
-                        .font(.headline)
+                    Text("sky.title").font(.headline)
                 }
-                if model.diagnosticsExpanded || dynamicTypeSize.isAccessibilitySize || geometry.size.height < 660 {
-                    ScrollView { content(fieldHeight: 200) }
+                if model.diagnosticsExpanded || dynamicTypeSize.isAccessibilitySize || geometry.size.height < 740 {
+                    ScrollView { content(fieldHeight: 280) }
                 } else {
                     content(fieldHeight: nil)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 14)
+        }
+        .onAppear { visible = true }
+        .onDisappear { visible = false; cameraWanted = false; aligning = false; camera.stop() }
+        .onChange(of: cameraWanted) { _, wanted in
+            aligning = false
+            if wanted { startCameraIfVisible() } else { camera.stop() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            aligning = false
+            if phase == .active { if cameraWanted { startCameraIfVisible() } }
+            else { camera.stop() }
+        }
+        .onChange(of: camera.state) { _, state in if state != .running { aligning = false } }
+        .onChange(of: model.directionReadiness) { _, readiness in
+            if !readiness.canUseDirection { aligning = false }
         }
     }
 
     private func content(fieldHeight: CGFloat?) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             DirectionStatusView(model: model)
-            GeometryReader { geometry in
-                ConstellationField(
-                    guide: .forStar(model.selectedStar.id),
-                    offset: model.directionReadiness.canUseDirection ? pointingOffset(in: geometry.size) : .zero,
-                    reduceMotion: reduceMotion
-                )
+            ZStack {
+                Color.hsNight
+                if camera.state == .running { CameraPreview(session: camera.session) }
+                if !aligning {
+                    SkyField(observations: model.observations, pose: model.skyPose,
+                             selectedStarID: model.selectedStarID,
+                             cameraFieldOfView: camera.metrics?.landscapeFieldOfView,
+                             cameraAspectRatio: camera.metrics?.landscapeAspectRatio)
+                } else { SkyReticle() }
+                if model.skyPose == nil {
+                    Text("sky.sensorPaused").font(.subheadline).multilineTextAlignment(.center)
+                        .padding(20).background(Color.hsNight.opacity(0.85))
+                }
             }
-            .frame(height: fieldHeight)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .opacity(model.directionReadiness.canUseDirection ? 1 : 0.35)
-            .nightPanel()
+            .frame(height: fieldHeight).frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(accessibilityDescription))
-
-            VStack(spacing: 5) {
-                Text(LocalizedStringKey(model.selectedStar.nameKey))
-                    .font(.title3.weight(.medium))
-                Text(LocalizedStringKey(ConstellationGuide.forStar(model.selectedStar.id).constellationKey))
-                    .font(.subheadline)
-                    .foregroundStyle(Color.hsSecondary)
-                Text(LocalizedStringKey(model.directionReadiness.canUseDirection ? "constellation.move" : "constellation.paused"))
-                    .font(.caption)
-                    .foregroundStyle(Color.hsSecondary)
-                    .multilineTextAlignment(.center)
+            .accessibilityLabel(Text(L10n.format("sky.accessibility", L10n.string(model.selectedStar.nameKey))))
+            VStack(spacing: 4) {
+                Text(LocalizedStringKey(model.selectedStar.nameKey)).font(.title3.weight(.medium))
+                if let group = SkyCatalog.constellation(for: model.selectedStarID) {
+                    Text(LocalizedStringKey(group.nameKey)).font(.subheadline).foregroundStyle(Color.hsSecondary)
+                }
+                Text("sky.hint").font(.caption).foregroundStyle(Color.hsSecondary).multilineTextAlignment(.center)
+            }.accessibilityElement(children: .combine)
+            if aligning {
+                Text(L10n.format("sky.alignInstruction", L10n.string(model.selectedStar.nameKey)))
+                    .font(.subheadline).multilineTextAlignment(.center)
+                if alignmentFailed { Text("sky.alignTooFar").font(.caption).foregroundStyle(Color.hsGuide) }
+                HStack {
+                    Button("sky.alignCancel") { aligning = false }
+                    Spacer()
+                    Button("sky.alignConfirm") {
+                        if model.alignSkyToSelectedStar() { aligning = false }
+                        else { alignmentFailed = true }
+                    }.disabled(!model.directionReadiness.canUseDirection)
+                }.frame(minHeight: 44)
+            } else {
+                HStack {
+                    Button { cameraWanted.toggle() } label: {
+                        Label(LocalizedStringKey(cameraWanted ? "sky.cameraOff" : "sky.cameraOn"), systemImage: "camera")
+                    }.frame(minHeight: 44)
+                    Spacer()
+                    if camera.state == .running && !model.isPractice {
+                        Button("sky.align") {
+                            model.clearSkyAlignment(); alignmentFailed = false; aligning = true
+                        }.frame(minHeight: 44).disabled(!model.directionReadiness.canUseDirection)
+                    }
+                }.font(.subheadline)
+                if model.skyAlignment != nil {
+                    HStack {
+                        Text("sky.aligned").font(.caption)
+                        Spacer()
+                        Button("sky.alignReset", action: model.clearSkyAlignment).frame(minHeight: 44)
+                    }.font(.caption).foregroundStyle(Color.hsSecondary)
+                }
             }
-            .accessibilityElement(children: .combine)
-
-            Button(action: model.restartFinding) {
-                Text("discovery.retry")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(Color.hsDiscovery.opacity(0.92))
-                    )
-                    .foregroundStyle(Color.hsNight)
+            cameraMessage
+            if let next = model.nextSkyStar {
+                Button(action: model.findNextSkyStar) {
+                    Text(L10n.format("sky.nextStar", L10n.string(next.nameKey)))
+                        .font(.headline).frame(maxWidth: .infinity, minHeight: 52)
+                        .background(RoundedRectangle(cornerRadius: 18).fill(Color.hsDiscovery))
+                        .foregroundStyle(Color.hsNight)
+                }
             }
-            .buttonStyle(.plain)
-            Button("common.backToStars", action: model.returnToPicker)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .buttonStyle(.plain)
+            Button("common.backToStars", action: model.returnToPicker).frame(minHeight: 44)
+            DisclosureGroup("sky.sources") {
+                Text("sky.credits").font(.caption).foregroundStyle(Color.hsSecondary)
+                Link("IAU Catalog of Star Names", destination: URL(string: "https://iauarchive.eso.org/public/themes/naming_stars/")!)
+                Link("Wikidata · Gamma Cassiopeiae", destination: URL(string: "https://www.wikidata.org/wiki/Q13584")!)
+                Link("CC BY 4.0", destination: URL(string: "https://creativecommons.org/licenses/by/4.0/")!)
+            }.font(.caption)
+        }.buttonStyle(.plain).tint(Color.hsDiscovery)
+    }
+
+    @ViewBuilder private var cameraMessage: some View {
+        switch camera.state {
+        case .requesting: Text("sky.cameraPreparing").font(.caption)
+        case .denied:
+            Text("sky.cameraDenied").font(.caption)
+            Button("readiness.openSettings", action: model.openAppSettings).frame(minHeight: 44)
+        case .unavailable, .interrupted:
+            Text("sky.cameraUnavailable").font(.caption)
+            Button("readiness.retry") { startCameraIfVisible() }.frame(minHeight: 44)
+        case .running: Text("sky.cameraHint").font(.caption).foregroundStyle(Color.hsSecondary)
+        case .off: EmptyView()
         }
     }
 
-    private var accessibilityDescription: String {
-        L10n.format(
-            "constellation.accessibility",
-            L10n.string(model.selectedStar.nameKey),
-            L10n.string(ConstellationGuide.forStar(model.selectedStar.id).constellationKey)
-        )
-    }
-
-    private func pointingOffset(in size: CGSize) -> CGSize {
-        guard let target = model.selectedObservation,
-              let aim = model.directionDiagnostics?.sensors.aim else { return .zero }
-        let azimuthError = signedDegrees(target.azimuthDegrees - aim.azimuthDegrees)
-        let altitudeError = target.altitudeDegrees - aim.altitudeDegrees
-        let x = max(-1.0, min(1.0, azimuthError / 42.0))
-        let y = max(-1.0, min(1.0, altitudeError / 30.0))
-        return CGSize(width: size.width * CGFloat(x) * 0.24, height: -size.height * CGFloat(y) * 0.22)
-    }
-
-    private func signedDegrees(_ degrees: Double) -> Double {
-        var value = degrees.truncatingRemainder(dividingBy: 360)
-        if value > 180 { value -= 360 }
-        if value <= -180 { value += 360 }
-        return value
-    }
-}
-
-private struct ConstellationField: View {
-    let guide: ConstellationGuide
-    let offset: CGSize
-    let reduceMotion: Bool
-
-    var body: some View {
-        Canvas { context, size in
-            let center = CGPoint(x: size.width / 2, y: size.height / 2)
-            let scale = min(size.width, size.height) * 0.74
-
-            for row in 1...7 {
-                for column in 1...5 {
-                    let point = CGPoint(
-                        x: size.width * CGFloat(column) / 6,
-                        y: size.height * CGFloat(row) / 8
-                    )
-                    context.fill(
-                        Path(ellipseIn: CGRect(x: point.x - 0.7, y: point.y - 0.7, width: 1.4, height: 1.4)),
-                        with: .color(Color.hsSecondary.opacity(0.35))
-                    )
-                }
-            }
-
-            context.translateBy(x: offset.width, y: offset.height)
-            let points = guide.points.map {
-                CGPoint(x: center.x + $0.x * scale, y: center.y + $0.y * scale)
-            }
-            for link in guide.links {
-                var line = Path()
-                line.move(to: points[link.0])
-                line.addLine(to: points[link.1])
-                context.stroke(line, with: .color(.hsDiscovery.opacity(0.8)), lineWidth: 1.05)
-            }
-            for (index, point) in points.enumerated() {
-                let radius: CGFloat = index == guide.targetIndex ? 5.4 : 3.0
-                context.fill(
-                    Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2)),
-                    with: .color(index == guide.targetIndex ? .hsDiscovery : .hsText)
-                )
-                if index == guide.targetIndex {
-                    context.stroke(
-                        Path(ellipseIn: CGRect(x: point.x - 10, y: point.y - 10, width: 20, height: 20)),
-                        with: .color(.hsDiscovery.opacity(0.7)),
-                        lineWidth: 0.9
-                    )
-                }
-            }
-        }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: offset)
-    }
-}
-
-private struct ConstellationGuide {
-    let constellationKey: String
-    let points: [CGPoint]
-    let links: [(Int, Int)]
-    let targetIndex: Int
-
-    static func forStar(_ id: String) -> ConstellationGuide {
-        switch id {
-        case "polaris":
-            return .init(
-                constellationKey: "constellation.umi",
-                points: [CGPoint(x: -0.42, y: 0.20), CGPoint(x: -0.20, y: 0.02), CGPoint(x: 0.02, y: 0.13), CGPoint(x: 0.25, y: -0.04), CGPoint(x: 0.40, y: -0.25), CGPoint(x: 0.18, y: -0.32)],
-                links: [(0, 1), (1, 2), (2, 3), (3, 4), (3, 5)],
-                targetIndex: 4
-            )
-        case "sirius":
-            return .init(
-                constellationKey: "constellation.cma",
-                points: [CGPoint(x: -0.42, y: -0.20), CGPoint(x: -0.18, y: -0.02), CGPoint(x: 0.08, y: 0.16), CGPoint(x: 0.38, y: 0.24), CGPoint(x: 0.12, y: -0.28)],
-                links: [(0, 1), (1, 2), (2, 3), (1, 4)],
-                targetIndex: 3
-            )
-        case "vega":
-            return .init(
-                constellationKey: "constellation.lyr",
-                points: [CGPoint(x: -0.32, y: -0.18), CGPoint(x: -0.05, y: -0.34), CGPoint(x: 0.26, y: -0.12), CGPoint(x: 0.18, y: 0.22), CGPoint(x: -0.18, y: 0.24)],
-                links: [(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)],
-                targetIndex: 1
-            )
-        default:
-            return .init(
-                constellationKey: "constellation.ori",
-                points: [CGPoint(x: -0.40, y: -0.25), CGPoint(x: -0.12, y: -0.04), CGPoint(x: 0.14, y: 0.10), CGPoint(x: 0.40, y: 0.28), CGPoint(x: 0.10, y: -0.26), CGPoint(x: -0.18, y: 0.27)],
-                links: [(0, 1), (1, 2), (2, 3), (1, 4), (2, 5)],
-                targetIndex: id == "rigel" ? 3 : 1
-            )
+    private func startCameraIfVisible() {
+        guard visible, cameraWanted, scenePhase == .active else { return }
+        Task {
+            // Recheck inside the queued task: leaving the view may have won the race.
+            guard visible, cameraWanted, scenePhase == .active else { return }
+            await camera.start()
         }
     }
 }

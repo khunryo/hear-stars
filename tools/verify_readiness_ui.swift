@@ -156,10 +156,29 @@ struct VerifyReadinessUI {
             ).title == motionCopy.title)
             print("\(language): readiness, 7 sensor issue overrides, motion waiting, and diagnostics copy resolved")
 
+            let observer = ObserverLocation(latitudeDegrees: 35.6812, longitudeDegrees: 139.7671)
+            let date = ISO8601DateFormatter().date(from: "2026-01-15T12:00:00Z")!
+            let observations = Dictionary(uniqueKeysWithValues: SkyCatalog.stars.map {
+                ($0.id, AstronomyCalculator.horizontalCoordinate(for: $0, at: date, observer: observer))
+            })
+            for star in SkyCatalog.stars {
+                precondition(L10n.string(star.nameKey, bundle: bundle) != star.nameKey)
+            }
+            for group in SkyCatalog.constellations {
+                precondition(L10n.string(group.nameKey, bundle: bundle) != group.nameKey)
+            }
             let content = VStack(alignment: .leading, spacing: 18) {
+                Text(verbatim: L10n.string("sky.title", bundle: bundle)).font(.title2)
+                ForEach(["polaris", "betelgeuse"], id: \.self) { id in
+                    let target = observations[id]!
+                    SkyField(observations: observations,
+                        pose: SkyPose(aim: .init(azimuthDegrees: target.azimuthDegrees, altitudeDegrees: target.altitudeDegrees)),
+                        selectedStarID: id, bundle: bundle)
+                        .frame(height: 280).nightPanel()
+                }
                 statusRow(current, bundle: bundle)
                 statusRow(staleStop, bundle: bundle)
-                DirectionDiagnosticDetails(current: current, lastStop: staleStop, build: "6", bundle: bundle)
+                DirectionDiagnosticDetails(current: current, lastStop: staleStop, build: "7", bundle: bundle)
                     .padding(12)
                     .nightPanel()
             }

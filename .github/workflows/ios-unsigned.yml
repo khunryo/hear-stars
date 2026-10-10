@@ -55,7 +55,7 @@ jobs:
           xcodegen generate
 
       - name: Test compass timing and readiness regressions first
-        run: swift test --filter 'SkyProjectionTests|HeadingAssessmentTests|DirectionReadinessTests'
+        run: swift test --filter 'SkyProjectionTests|SkyCatalogTests|HeadingAssessmentTests|DirectionReadinessTests'
 
       - name: Test astronomy and direction readiness
         run: swift test
@@ -92,6 +92,7 @@ jobs:
             HearStarsApp/Components/DirectionStatusCopy.swift \
             HearStarsApp/Components/DirectionDiagnosticSnapshot.swift \
             HearStarsApp/Components/DirectionDiagnosticDetails.swift \
+            HearStarsApp/Components/SkyField.swift \
             tools/verify_readiness_ui.swift \
             -o build/verify-readiness-ui
           build/verify-readiness-ui "$APP_PATH" build/readiness-ui
@@ -121,7 +122,7 @@ jobs:
         if: env.SAVE_DOWNLOAD == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: HearStars-build6-${{ github.run_number }}
+          name: HearStars-build7-${{ github.run_number }}
           path: |
             build/ios/ipa/HearStars-unsigned.ipa
             build/readiness-ui/*.png

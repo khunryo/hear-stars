@@ -17,6 +17,9 @@ final class AppModel: ObservableObject {
     @Published private var diagnosticHistory = DirectionDiagnosticHistory()
     @Published var diagnosticsExpanded = false
     @Published private(set) var simulatedAim = DeviceAim(azimuthDegrees: 0, altitudeDegrees: 20)
+    @Published private(set) var skyAlignment: SkyAlignment?
+    @Published private(set) var skyReturnRoute: AppRoute = .discovery
+    private var alignmentReference: HeadingReference?
 
     let sensors = SensorService()
     let stars = StarCatalog.prototype
@@ -52,11 +55,50 @@ final class AppModel: ObservableObject {
     }()
 
     var selectedStar: Star {
-        stars.first(where: { $0.id == selectedStarID }) ?? stars[0]
+        SkyCatalog.stars.first(where: { $0.id == selectedStarID }) ?? stars[0]
     }
 
     var selectedObservation: HorizontalCoordinate? {
         observations[selectedStarID]
+    }
+
+    var skyPose: SkyPose? {
+        guard directionReadiness.canUseDirection else { return nil }
+        let pose: SkyPose
+        if isUsingSimulatedAim {
+            pose = SkyPose(aim: simulatedAim)
+        } else {
+            guard let sample = directionDiagnostics?.sensors, sample.motionIsFresh,
+                  sample.headingIsFresh, let aim = sample.aim else { return nil }
+            pose = SkyPose(aim: aim, cameraUp: sample.cameraUp)
+        }
+        return skyAlignment?.applying(to: pose) ?? pose
+    }
+
+    var nextSkyStar: Star? { SkyCatalog.nextStar(after: selectedStarID, observations: observations) }
+
+    func alignSkyToSelectedStar() -> Bool {
+        guard !isPractice, directionReadiness.canUseDirection,
+              let sample = directionDiagnostics?.sensors, sample.motionIsFresh, sample.headingIsFresh,
+              let aim = sample.aim, let target = selectedObservation,
+              let alignment = SkyAlignment(matching: SkyPose(aim: aim, cameraUp: sample.cameraUp), to: target) else { return false }
+        skyAlignment = alignment
+        alignmentReference = sample.reference
+        return true
+    }
+
+    func clearSkyAlignment() { skyAlignment = nil; alignmentReference = nil }
+
+    func leaveSky() {
+        if skyReturnRoute == .finder { clearDirectionDiagnostics(); enterFinder(); refresh() }
+        else { returnToDiscovery() }
+    }
+
+    func findNextSkyStar() {
+        guard let next = nextSkyStar else { returnToPicker(); return }
+        if isPractice {
+            clearDirectionDiagnostics(); selectedStarID = next.id; enterFinder(); refresh()
+        } else { startFinding(next) }
     }
 
     var isUsingSimulatedAim: Bool {
@@ -246,6 +288,7 @@ final class AppModel: ObservableObject {
     }
 
     func showConstellation() {
+        skyReturnRoute = route == .finder ? .finder : .discovery
         clearDirectionDiagnostics()
         stopPulses()
         preparationStartedAt = ProcessInfo.processInfo.systemUptime
@@ -376,7 +419,7 @@ final class AppModel: ObservableObject {
             return
         }
         let date = observationDate
-        observations = Dictionary(uniqueKeysWithValues: stars.map { star in
+        observations = Dictionary(uniqueKeysWithValues: SkyCatalog.stars.map { star in
             (star.id, AstronomyCalculator.horizontalCoordinate(for: star, at: date, observer: observer))
         })
     }
@@ -397,6 +440,7 @@ final class AppModel: ObservableObject {
             }
         }
         let snapshot = sensors.captureDirectionSnapshot()
+        if let alignmentReference, alignmentReference != snapshot.reference { clearSkyAlignment() }
         let state = DirectionReadiness.evaluate(
             location: location,
             directionHardwareAvailable: isUsingSimulatedAim || sensors.directionHardwareAvailable,
@@ -418,6 +462,7 @@ final class AppModel: ObservableObject {
     }
 
     private func clearDirectionDiagnostics() {
+        clearSkyAlignment()
         var history = diagnosticHistory
         history.clear()
         diagnosticHistory = history
@@ -450,14 +495,14 @@ final class AppModel: ObservableObject {
         clearDirectionDiagnostics()
         audio.stop()
         haptics.stop()
+        route = .discovery
+        showConstellation()
         audio.playDiscovery(for: selectedStar)
         haptics.playDiscovery(for: selectedStar)
-        sensors.stop()
         announce(
             L10n.string("discovery.title"),
             force: true
         )
-        route = .discovery
     }
 
     private func announceBandIfNeeded(_ state: GuidanceState) {

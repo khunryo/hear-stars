@@ -15,6 +15,7 @@ struct DirectionSensorSnapshot: Equatable {
     let hasTrueHeading: Bool
     let magneticKey: String
     let magneticCalibrated: Bool
+    var cameraUp: SkyVector? = nil
 
     var motionIsFresh: Bool {
         guard let motionAge else { return false }

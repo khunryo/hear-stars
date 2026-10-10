@@ -51,6 +51,7 @@ final class SensorService: NSObject, ObservableObject {
     private var headingPairing = HeadingSamplePairing()
     private var headingReferenceOffsetDegrees = 0.0
     private var didAllowSystemCalibration = false
+    private var cameraUp: SkyVector?
     private var referenceKind: HeadingReference = .arbitrary
 
     override init() {
@@ -111,6 +112,7 @@ final class SensorService: NSObject, ObservableObject {
             activityManager.stopActivityUpdates()
         }
         aim = nil
+        cameraUp = nil
         lastMotionAt = nil
         lastMotionUptime = nil
         isUnsafeMotion = false
@@ -160,7 +162,7 @@ final class SensorService: NSObject, ObservableObject {
             rawAccuracy: headingAccuracyDegrees, residual: headingResidualDegrees,
             gravityError: gravityAlignmentErrorDegrees, reference: referenceKind,
             hasTrueHeading: trueHeadingDegrees != nil, magneticKey: magneticKey,
-            magneticCalibrated: magneticAccuracy != .uncalibrated
+            magneticCalibrated: magneticAccuracy != .uncalibrated, cameraUp: cameraUp
         )
     }
 
@@ -282,6 +284,11 @@ final class SensorService: NSObject, ObservableObject {
         magneticAccuracy = motion.magneticField.accuracy
 
         let topInReference = (deviceToReference * Vector3(x: 0, y: 1, z: 0)).normalized
+        let correction = AngleMath.radians(headingReferenceOffsetDegrees)
+        let east = -topInReference.y
+        let north = topInReference.x
+        cameraUp = SkyVector(east: east * cos(correction) + north * sin(correction),
+                             north: north * cos(correction) - east * sin(correction), up: topInReference.z)
         let predicted: Double?
         if hypot(topInReference.x, topInReference.y) > 0.3 {
             predicted = AngleMath.normalizeDegrees(
