@@ -29,13 +29,29 @@
 
 ## Tasks
 
-- [ ] **1 — Projection and alignment.** Add `SkyProjection.swift` and `SkyProjectionTests.swift`. Test center/right/up, 0/360 wrap, roll/zenith, portrait crop, behind/horizon/invalid input, bounded alignment and neighbor geometry. Run targeted CI against the stub first, then the real implementation.
-- [ ] **2 — Catalog and sensor snapshot.** Add `SkyCatalog.swift` with source-tagged real stars and original ID edges; validate uniqueness/endpoints. Capture camera-up in `SensorService` / `DirectionSensorSnapshot`; compute all sky observations in `AppModel`. Use the same snapshot as readiness.
-- [ ] **3 — Camera and experience.** Add a preview-only lifecycle service and UIViewRepresentable. Replace schematic constellation canvas with a shared real sky field; reveal it near the target in Finder, offer direct sky access, and retain the result/return flow. Add explicit camera toggle, named-star alignment and next-visible-star navigation.
-- [ ] **4 — Verify and deliver Build 7.** Add both-language copy/privacy text, camera usage description and portrait config; update IPA/UI verification. Review the branch, run targeted and full Swift tests plus iPhone build, inspect rendered production sky/copy, verify/download IPA if free storage is confirmed, and update the existing local HANDOFF only.
+- [x] **1 — Projection and alignment.** Add `SkyProjection.swift` and `SkyProjectionTests.swift`. Test center/right/up, 0/360 wrap, roll/zenith, portrait crop, behind/horizon/invalid input, bounded alignment and neighbor geometry. Run targeted CI against the stub first, then the real implementation.
+- [x] **2 — Catalog and sensor snapshot.** Add `SkyCatalog.swift` with source-tagged real stars and original ID edges; validate uniqueness/endpoints. Capture camera-up in `SensorService` / `DirectionSensorSnapshot`; compute all sky observations in `AppModel`. Use the same snapshot as readiness.
+- [x] **3 — Camera and experience.** Add a preview-only lifecycle service and UIViewRepresentable. Replace schematic constellation canvas with a shared real sky field; reveal it near the target in Finder, offer direct sky access, and retain the result/return flow. Add explicit camera toggle, named-star alignment and next-visible-star navigation.
+- [x] **4 — Verify and deliver Build 7.** Add both-language copy/privacy text, camera usage description and portrait config; update IPA/UI verification. Review the branch, run targeted and full Swift tests plus iPhone build, inspect rendered production sky/copy, verify/download IPA if free storage is confirmed, and update the existing local HANDOFF only.
 
 ## Evidence and decisions
 
 - Existing Build 6: 59 tests passed; user reports improved behavior. Complete real-device safety/accuracy verification remains open.
 - No local Swift/Xcode runtime is available; standard public GitHub macOS CI supplies executable Swift tests and iPhone compilation. Keep artifact uploads off until current free storage is checked.
 - Figma/Context7/Firecrawl/Runway/GitHub connector actions are not exposed in this session. Use available tools and existing visual components; do not claim connector execution.
+- RED: [38093263050](https://github.com/khunryo/hear-stars/actions/runs/38093263050), source f67c346: projection stubs compiled; 8 expected unwrap failures, 3 fail-closed sky tests passed.
+- GREEN final: [38094374070](https://github.com/khunryo/hear-stars/actions/runs/38094374070), source 11ea0b00e152dfb921f9d9b249fdc9eee87cde7c: targeted 42 / full 75 tests, zero failures, iPhone Release compile, JA/EN 250 bundled translations each, portrait-only and camera permission plist checks passed.
+- Downloaded artifact 11685581406; ZIP digest matched GitHub metadata. IPA 0.1.0(7), 1,460,335 bytes, SHA256 `98aba1636f98f2d1f66da7bce64c42b6d5a1789fcac3ba41c3d5fb22f3aa9019`. Local IPA verification repeated successfully; Japanese/English production sky-field/copy renders visually inspected (not full iPhone screenshots).
+- Chrome billing on 2026-10-11: Actions billable $0, storage 0/0.5GB before upload. Artifact ~1.97MB, one-day retention, no cache; upload guard restored OFF after download. No billing changes.
+
+### Standards review
+
+Fixed point Build 6 abb02feb through implementation 5e17c06. Two P2 findings: Canvas star-name fonts did not scale; Reduce Motion did not stop chart motion. Commit 11ea0b0 added scaled fonts/collision spacing and an explicitly labeled still chart with manual refresh, disabling/stopping camera in that mode. Independent follow-up found no further actionable standards findings. No Fowler heuristic findings.
+
+### Spec review
+
+One P2 finding: fixed-size star labels violated large-text support (overlaps the standards finding, counted separately). Addressed in 11ea0b0; independent follow-up found no concrete regressions. No definite projection, lifecycle, navigation or safety-gate bypass found by static review.
+
+### Remaining real-device gate
+
+Camera registration/FOV/roll, permission/interruption/background races, Dynamic Type/VoiceOver/Reduce Motion on iPhone and outdoor discovery must be exercised using `08-field-test.md`. Existing intermittent sensor stops are not claimed fully fixed. Added-star proper-motion approximations and Gamma Cas epoch assumption are documented in `11-sky-data.md`; signature and commercial rights gates remain open. Stop at this downloadable-test-build milestone.

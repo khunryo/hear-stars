@@ -14,6 +14,8 @@
 - 日本語・英語、VoiceOver、Reduce Motion
 - SwiftUI / Core Location / Core Motion / AVAudioEngine / Core Haptics
 
+Build 7の実機テスト拡張では、31星・6星座の実座標星図、任意の背面カメラ背景、見える星での位置合わせ、次の星への導線を追加しました。星に近づくと線が現れ、方向一致後は周囲の星図へ進みます。星図は端末姿勢に追従しますが、映像から星を検出する機能ではありません。Reduce Motion時は静止星図と手動更新に切り替わります。
+
 ## 開発状態
 
 本人の実機試用向けに、GitHub Actions の無料標準 Mac 環境で署名なし IPA を作成します。[ビルドと Sideloadly の手順](docs/09-build-and-sideload.md)を参照してください。Codemagic の設定も残っていますが、無料枠消費後の標準ビルド先は GitHub です。一般向け配布は[屋外実機テスト](docs/08-field-test.md)と精度・安全・権利のゲート通過後の別工程です。屋外検証が終わるまでは「実際の星を発見できる」と断定しません。
@@ -30,6 +32,8 @@
 7. [受入条件](docs/07-acceptance.md)
 8. [屋外実機テスト](docs/08-field-test.md)
 9. [GitHub の無料ビルドと iPhone での試用](docs/09-build-and-sideload.md)
+10. [Build 7の承認済み設計と確認結果](docs/10-sky-view.md)
+11. [追加星図データの出典・近似・権利条件](docs/11-sky-data.md)
 
 ## プロジェクト生成（macOS）
 
@@ -44,3 +48,4 @@ open HearStars.xcodeproj
 ## プライバシー
 
 通信、ログイン、広告、外部解析 SDK はありません。位置情報とモーション情報は端末内の現在セッションだけで使用し、保存・送信しません。
+任意のカメラ背景もプレビューだけで、映像・写真の記録、保存、送信は行いません。カメラを許可しなくても星図を使えます。
