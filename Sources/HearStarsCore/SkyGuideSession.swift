@@ -10,9 +10,8 @@ public struct SkyGuideSession {
         guidanceStarID = starID
     }
 
-    public mutating func select(_ selection: SkySelection, resolvedStarID: String?) {
+    public mutating func select(_ selection: SkySelection) {
         self.selection = selection
-        if let resolvedStarID { guidanceStarID = resolvedStarID }
     }
 
     public mutating func beginGuidance(starID: String, selection: SkySelection? = nil) {
@@ -21,21 +20,19 @@ public struct SkyGuideSession {
         guidanceStarID = starID
     }
 
-    public mutating func cancelSelection() {}
+    public mutating func cancelSelection() { selection = guidanceSelection }
 }
 
 public enum SkyChartPose {
     public static func resolve(reduceMotion: Bool, selection: SkySelection,
                                observations: [String: HorizontalCoordinate], livePose: SkyPose?) -> SkyPose? {
-        guard let livePose else { return nil }
         guard reduceMotion else { return livePose }
-        let target: HorizontalCoordinate?
-        switch selection {
-        case .star(let id): target = observations[id]
-        case .constellation:
-            target = SkySelectionResolver.star(for: selection, observations: observations).flatMap { observations[$0.id] }
+        // A static chart uses computed sky positions, not the phone's compass.
+        let preferred = SkySelectionResolver.star(for: selection, observations: observations)
+        let visible = preferred ?? SkyCatalog.starsByBrightness.first {
+            (observations[$0.id]?.altitudeDegrees ?? -.infinity) >= 5
         }
-        guard let target else { return livePose }
+        guard let star = visible, let target = observations[star.id] else { return nil }
         return SkyPose(aim: .init(azimuthDegrees: target.azimuthDegrees, altitudeDegrees: target.altitudeDegrees))
     }
 }

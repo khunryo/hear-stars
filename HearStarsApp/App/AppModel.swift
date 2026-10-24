@@ -80,7 +80,7 @@ final class AppModel: ObservableObject {
     }
     func selectSkyTarget(_ selection: SkySelection) {
         clearSkyAlignment()
-        skyTargets.select(selection, resolvedStarID: SkySelectionResolver.star(for: selection, observations: observations)?.id)
+        skyTargets.select(selection)
     }
     func browseSky() { showConstellation() }
     func guideToSkyTarget() {

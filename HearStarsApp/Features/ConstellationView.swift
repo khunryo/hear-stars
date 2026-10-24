@@ -85,7 +85,7 @@ struct ConstellationView: View {
                              onSelect: model.selectSkyTarget)
                         .id(stillRevision)
                 } else { SkyReticle() }
-                if model.skyPose == nil {
+                if chartPose == nil {
                     Text("sky.sensorPaused").font(.subheadline).multilineTextAlignment(.center)
                         .padding(20).background(Color.hsNight.opacity(0.85))
                 }
