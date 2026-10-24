@@ -74,7 +74,7 @@ struct FinderView: View {
             }
 
             Spacer()
-            Text(LocalizedStringKey(model.selectedStar.nameKey))
+            Text(verbatim: model.skySelectionTitle)
                 .font(.headline)
         }
     }

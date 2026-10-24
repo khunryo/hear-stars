@@ -84,7 +84,7 @@ def check_localizations() -> None:
     literals = set(
         re.findall(r'"([A-Za-z][A-Za-z0-9_.]+)"', "\n".join(swift_lines))
     )
-    referenced = {key for key in literals if key.startswith(KEY_PREFIXES)}
+    referenced = {key for key in literals if key.startswith(KEY_PREFIXES) and key not in KEY_PREFIXES}
     missing = referenced - ja
     require(not missing, f"Missing localized strings: {sorted(missing)}")
 
@@ -142,6 +142,19 @@ def main() -> None:
     check_localizations()
     check_privacy_and_scope()
     check_readme_links()
+    catalog = json.loads((ROOT / "Sources/HearStarsCore/Resources/full-sky.json").read_text(encoding="utf-8"))
+    require(len(catalog["stars"]) >= 5000, "Full sky catalog is missing stars")
+    ids = {row["id"] for row in catalog["stars"]}
+    require(len(ids) == len(catalog["stars"]), "Duplicate full sky star IDs")
+    require(len({row["id"] for row in catalog["constellations"]}) == 88, "Expected all 88 constellations")
+    for group in catalog["constellations"]:
+        require(bool(group["links"]), "Constellation figure cannot be empty")
+        require(set(group["starIDs"]) <= ids, "Unknown constellation star")
+        require(all(len(edge) == 2 and edge[0] != edge[1] and set(edge) <= set(group["starIDs"])
+                    for edge in group["links"]), "Invalid constellation endpoint")
+        for language in ("ja", "en"):
+            require("constellation." + group["id"] in localization_keys(
+                ROOT / f"HearStarsApp/Resources/{language}.lproj/Localizable.strings"), "Missing constellation name")
     print("Project structure: OK")
 
 

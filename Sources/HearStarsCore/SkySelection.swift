@@ -22,12 +22,20 @@ public enum SkyPicking {
         guard point.x.isFinite, point.y.isFinite, viewport.width.isFinite, viewport.height.isFinite,
               viewport.width > 0, viewport.height > 0, radiusPoints.isFinite, radiusPoints > 0 else { return nil }
         var closest: SkyPickCandidate?
-        var closestDistance = radiusPoints
+        var closestDistance = Double.infinity
         for candidate in candidates {
             guard candidate.position.x.isFinite, candidate.position.y.isFinite else { continue }
-            let distance = hypot((candidate.position.x - point.x) * viewport.width,
-                                 (candidate.position.y - point.y) * viewport.height)
-            if distance < closestDistance || (distance == closestDistance && candidate.priority > (closest?.priority ?? -1)) {
+            let dx = (candidate.position.x - point.x) * viewport.width
+            let dy = (candidate.position.y - point.y) * viewport.height
+            let distance = hypot(dx, dy)
+            let contains: Bool
+            if let width = candidate.hitWidthPoints, let height = candidate.hitHeightPoints {
+                guard width.isFinite, height.isFinite, width > 0, height > 0 else { continue }
+                contains = abs(dx) <= width / 2 && abs(dy) <= height / 2
+            } else { contains = distance <= radiusPoints }
+            guard contains else { continue }
+            if closest == nil || candidate.priority > closest!.priority
+                || (candidate.priority == closest!.priority && distance < closestDistance) {
                 closest = candidate; closestDistance = distance
             }
         }

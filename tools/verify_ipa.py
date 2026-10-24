@@ -1,6 +1,7 @@
 """Inspect the packaged IPA without changing or signing it."""
 
 import hashlib
+import json
 import plistlib
 import sys
 import zipfile
@@ -15,13 +16,20 @@ def main():
         info = plistlib.loads(archive.read(prefix + "Info.plist"))
         assert info["CFBundleIdentifier"] == "com.example.HearStars"
         assert info["CFBundleShortVersionString"] == "0.1.0"
-        assert info["CFBundleVersion"] == "7"
+        assert info["CFBundleVersion"] == "8"
         assert info["MinimumOSVersion"] == "17.0"
         assert not any(name.endswith(".mobileprovision") for name in archive.namelist())
         assert info["NSCameraUsageDescription"]
         assert info["UISupportedInterfaceOrientations"] == ["UIInterfaceOrientationPortrait"]
         assert "iPhoneOS" in info["CFBundleSupportedPlatforms"]
         assert archive.getinfo(prefix + info["CFBundleExecutable"]).file_size > 0
+        catalog_path = prefix + "Frameworks/HearStarsCore.framework/full-sky.json"
+        catalog = json.loads(archive.read(catalog_path))
+        assert len(catalog["stars"]) >= 5000
+        assert len(catalog["constellations"]) == 88
+        assert len({g["id"] for g in catalog["constellations"]}) == 88
+        assert archive.read(prefix + "Frameworks/HearStarsCore.framework/SkyDataNotices.txt")
+        print(f"Full sky: {len(catalog['stars'])} stars, 88 constellations and bundled notices")
         for language in ("ja", "en"):
             strings = plistlib.loads(archive.read(prefix + language + ".lproj/Localizable.strings"))
             assert strings["readiness.calibrating.title"] == (

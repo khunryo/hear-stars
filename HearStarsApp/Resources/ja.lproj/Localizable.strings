@@ -295,11 +295,20 @@
 "constellation.vul" = "こぎつね座";
 
 "sky.title" = "空を見渡す";
+"sky.browse" = "夜空をひらく";
+"sky.chooseTarget" = "星や星座を選んでください";
+"sky.constellationList" = "星座を一覧から選ぶ";
+"sky.guideSelected" = "音と振動でこの方向へ案内";
+"sky.anchor" = "目印：%@";
+"sky.notVisible" = "いま案内できる高さに目印の星がありません";
+"sky.catalogUnavailable" = "全天データを読み込めません。少数星の表示に戻しています。";
+"sky.done" = "閉じる";
+"sky.fullCredits" = "恒星：Yale BSC5 / Bretton Wade（MIT）。星座線：d3-celestial / Olaf Frohn（BSD-3-Clause）、IAU図に基づく。元の31星の出典も維持。全文の利用条件を表示します。";
 "sky.stillHint" = "動きを減らす設定に合わせ、選んだ星を中心にした静止星図です。端末の向きやカメラとは連動しません。";
 "sky.refreshStill" = "静止星図を更新";
 "sky.open" = "星図を開く";
 "sky.backToFinding" = "探す画面へ";
-"sky.hint" = "端末を動かすと、今向けている空の星が動きます。線は主な星を結んだ独自のガイドです。";
+"sky.hint" = "端末を動かして空を見渡し、星や星座名をタップして案内先を選べます。";
 "sky.sensorPaused" = "方角の確認中です。整うと星図が戻ります。";
 "sky.accessibility" = "%@と周囲の星の計算位置を表示する星図。星の検出ではありません。";
 "sky.cameraOn" = "カメラ背景";

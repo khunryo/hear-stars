@@ -45,7 +45,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.HearStars
         PRODUCT_NAME: "Hear the Stars"
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "7"
+        CURRENT_PROJECT_VERSION: "8"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
@@ -53,7 +53,7 @@ targets:
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.education
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Your location is used only on this device to calculate where the selected star is in the sky. It is not stored or sent."
         INFOPLIST_KEY_NSMotionUsageDescription: "Motion sensors compare the direction of your iPhone with the star and pause guidance when movement is detected."
-        INFOPLIST_KEY_NSCameraUsageDescription: "The optional camera background shows calculated stars and original constellation lines. Video is not recorded, stored, or sent."
+        INFOPLIST_KEY_NSCameraUsageDescription: "The optional camera background shows calculated stars and constellation lines. Video is not recorded, stored, or sent."
         INFOPLIST_KEY_UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES

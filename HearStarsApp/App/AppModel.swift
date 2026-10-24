@@ -19,7 +19,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var simulatedAim = DeviceAim(azimuthDegrees: 0, altitudeDegrees: 20)
     @Published private(set) var skyAlignment: SkyAlignment?
     @Published private(set) var skyReturnRoute: AppRoute = .discovery
+    @Published private(set) var skySelection: SkySelection = .star("polaris")
     private var alignmentReference: HeadingReference?
+    private var observationSchedule = SkyObservationSchedule()
 
     let sensors = SensorService()
     let stars = StarCatalog.prototype
@@ -55,7 +57,37 @@ final class AppModel: ObservableObject {
     }()
 
     var selectedStar: Star {
-        SkyCatalog.stars.first(where: { $0.id == selectedStarID }) ?? stars[0]
+        SkyCatalog.starsByID[selectedStarID] ?? stars[0]
+    }
+
+    var skyGuideStar: Star? { SkySelectionResolver.star(for: skySelection, observations: observations) }
+    var selectedSkyConstellationID: String? {
+        if case .constellation(let id) = skySelection { return id }
+        return nil
+    }
+    var skyDisplayedStarID: String {
+        switch skySelection {
+        case .star(let id): return id
+        case .constellation: return skyGuideStar?.id ?? ""
+        }
+    }
+    var skySelectionTitle: String {
+        switch skySelection {
+        case .star(let id): return L10n.string(SkyCatalog.starsByID[id]?.nameKey ?? "sky.chooseTarget")
+        case .constellation(let id): return L10n.string("constellation." + id)
+        }
+    }
+    func selectSkyTarget(_ selection: SkySelection) {
+        clearSkyAlignment()
+        skySelection = selection
+        if let anchor = skyGuideStar { selectedStarID = anchor.id }
+    }
+    func browseSky() { showConstellation() }
+    func guideToSkyTarget() {
+        guard let target = skyGuideStar else { return }
+        if isPractice {
+            clearDirectionDiagnostics(); selectedStarID = target.id; enterFinder(); refresh()
+        } else { startFinding(target, selectedTarget: skySelection) }
     }
 
     var selectedObservation: HorizontalCoordinate? {
@@ -80,7 +112,7 @@ final class AppModel: ObservableObject {
     func alignSkyToSelectedStar() -> Bool {
         guard !isPractice, directionReadiness.canUseDirection,
               let sample = directionDiagnostics?.sensors, sample.motionIsFresh, sample.headingIsFresh,
-              let aim = sample.aim, let target = selectedObservation,
+              let aim = sample.aim, let target = observations[skyDisplayedStarID],
               let alignment = SkyAlignment(matching: SkyPose(aim: aim, cameraUp: sample.cameraUp), to: target) else { return false }
         skyAlignment = alignment
         alignmentReference = sample.reference
@@ -91,13 +123,14 @@ final class AppModel: ObservableObject {
 
     func leaveSky() {
         if skyReturnRoute == .finder { clearDirectionDiagnostics(); enterFinder(); refresh() }
+        else if skyReturnRoute == .picker { returnToPicker() }
         else { returnToDiscovery() }
     }
 
     func findNextSkyStar() {
         guard let next = nextSkyStar else { returnToPicker(); return }
         if isPractice {
-            clearDirectionDiagnostics(); selectedStarID = next.id; enterFinder(); refresh()
+            clearDirectionDiagnostics(); selectedStarID = next.id; skySelection = .star(next.id); enterFinder(); refresh()
         } else { startFinding(next) }
     }
 
@@ -170,15 +203,17 @@ final class AppModel: ObservableObject {
 
     func select(_ star: Star) {
         selectedStarID = star.id
+        skySelection = .star(star.id)
         refresh()
     }
 
-    func startFinding(_ star: Star) {
+    func startFinding(_ star: Star, selectedTarget: SkySelection? = nil) {
         clearDirectionDiagnostics()
         stopPulses()
         isPractice = false
         simulatorEnabled = false
         selectedStarID = star.id
+        skySelection = selectedTarget ?? .star(star.id)
         holdTracker.reset()
         nextPulseAt = .distantPast
         lastAnnouncedBand = nil
@@ -288,7 +323,7 @@ final class AppModel: ObservableObject {
     }
 
     func showConstellation() {
-        skyReturnRoute = route == .finder ? .finder : .discovery
+        skyReturnRoute = route == .finder ? .finder : (route == .picker ? .picker : .discovery)
         clearDirectionDiagnostics()
         stopPulses()
         preparationStartedAt = ProcessInfo.processInfo.systemUptime
@@ -415,10 +450,12 @@ final class AppModel: ObservableObject {
         }
 
         guard let observer else {
-            observations = [:]
+            if !observations.isEmpty { observations = [:] }
+            observationSchedule = SkyObservationSchedule()
             return
         }
         let date = observationDate
+        guard observationSchedule.shouldRecalculate(at: date, observer: observer, isPractice: isPractice) else { return }
         observations = Dictionary(uniqueKeysWithValues: SkyCatalog.stars.map { star in
             (star.id, AstronomyCalculator.horizontalCoordinate(for: star, at: date, observer: observer))
         })
@@ -446,7 +483,9 @@ final class AppModel: ObservableObject {
             directionHardwareAvailable: isUsingSimulatedAim || sensors.directionHardwareAvailable,
             sensorIsFresh: isUsingSimulatedAim || (snapshot.motionIsFresh && snapshot.aim != nil),
             headingAccuracyDegrees: isUsingSimulatedAim ? 0 : snapshot.assessment.effectiveAccuracyDegrees,
-            targetAltitudeDegrees: selectedObservation?.altitudeDegrees,
+            // Browsing checks orientation, not whether a previously selected star has set.
+            // Guide-start and Finder still use the actual selected star's horizon gate.
+            targetAltitudeDegrees: route == .constellation ? 90 : selectedObservation?.altitudeDegrees,
             isMoving: snapshot.isMoving,
             preparationHasTimedOut: ProcessInfo.processInfo.systemUptime - preparationStartedAt >= 12,
             headingIsFresh: isUsingSimulatedAim || snapshot.headingIsFresh

@@ -52,6 +52,8 @@ jobs:
             brew install xcodegen
           fi
           python3 tools/audit_project.py
+          python3 -m unittest discover -s tools -p test_import_full_sky.py -q
+          python3 tools/import_full_sky.py
           xcodegen generate
 
       - name: Test compass timing and readiness regressions first
@@ -123,7 +125,7 @@ jobs:
         if: env.SAVE_DOWNLOAD == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: HearStars-build7-${{ github.run_number }}
+          name: HearStars-build8-${{ github.run_number }}
           path: |
             build/ios/ipa/HearStars-unsigned.ipa
             build/readiness-ui/*.png

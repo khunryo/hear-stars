@@ -179,7 +179,7 @@ struct VerifyReadinessUI {
                 }
                 statusRow(current, bundle: bundle)
                 statusRow(staleStop, bundle: bundle)
-                DirectionDiagnosticDetails(current: current, lastStop: staleStop, build: "7", bundle: bundle)
+                DirectionDiagnosticDetails(current: current, lastStop: staleStop, build: "8", bundle: bundle)
                     .padding(12)
                     .nightPanel()
             }

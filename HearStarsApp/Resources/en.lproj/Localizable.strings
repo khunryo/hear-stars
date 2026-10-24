@@ -295,11 +295,20 @@
 "constellation.vul" = "Vulpecula";
 
 "sky.title" = "Explore the sky";
+"sky.browse" = "Open the night sky";
+"sky.chooseTarget" = "Choose a star or constellation";
+"sky.constellationList" = "Choose from constellations";
+"sky.guideSelected" = "Guide here with sound and vibration";
+"sky.anchor" = "Guide star: %@";
+"sky.notVisible" = "No guide star is high enough above the horizon now";
+"sky.catalogUnavailable" = "Full sky data is unavailable. Showing the small fallback catalog.";
+"sky.done" = "Done";
+"sky.fullCredits" = "Stars: Yale BSC5 / Bretton Wade (MIT). Constellation figures: d3-celestial / Olaf Frohn (BSD-3-Clause), based on IAU charts. Original31 source notices are retained. See full terms below.";
 "sky.stillHint" = "Reduce Motion: a still chart centered on the selected star, not linked to phone direction or camera.";
 "sky.refreshStill" = "Refresh still chart";
 "sky.open" = "Open sky chart";
 "sky.backToFinding" = "Back to finding";
-"sky.hint" = "Move your phone to explore calculated star positions. Original lines connect selected stars.";
+"sky.hint" = "Move your phone to explore. Tap a star or constellation name to choose where to go.";
 "sky.sensorPaused" = "Checking direction. The sky chart will return when ready.";
 "sky.accessibility" = "Sky chart showing calculated positions of %@ and nearby stars. This is not star detection.";
 "sky.cameraOn" = "Camera background";

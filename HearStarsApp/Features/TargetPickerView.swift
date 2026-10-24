@@ -9,6 +9,7 @@ struct TargetPickerView: View {
         GeometryReader { geometry in
             let compact = geometry.size.height < 700 || dynamicTypeSize.isAccessibilitySize
 
+            ScrollView {
             VStack(alignment: .leading, spacing: compact ? 9 : 14) {
                 Text("app.title")
                     .font(.caption.weight(.semibold))
@@ -27,6 +28,13 @@ struct TargetPickerView: View {
                 }
 
                 Spacer(minLength: compact ? 2 : 8)
+
+                Button(action: model.browseSky) {
+                    Label("sky.browse", systemImage: "sparkles")
+                        .font(.headline).frame(maxWidth: .infinity, minHeight: 52)
+                        .background(RoundedRectangle(cornerRadius: 18).fill(Color.hsDiscovery))
+                        .foregroundStyle(Color.hsNight)
+                }.buttonStyle(.plain)
 
                 VStack(spacing: compact ? 7 : 10) {
                     ForEach(model.stars) { star in
@@ -50,6 +58,7 @@ struct TargetPickerView: View {
             .padding(.horizontal, 20)
             .padding(.top, 14)
             .padding(.bottom, 12)
+            }
         }
     }
 }
