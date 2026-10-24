@@ -99,7 +99,7 @@ struct ConstellationView: View {
                 if model.selectedSkyConstellationID != nil, let anchor = model.skyGuideStar {
                     Text(L10n.format("sky.anchor", L10n.string(anchor.nameKey)))
                         .font(.subheadline).foregroundStyle(Color.hsSecondary)
-                } else if let group = SkyCatalog.constellation(for: model.selectedStarID) {
+                } else if let group = SkyCatalog.constellation(for: model.skyDisplayedStarID) {
                     Text(LocalizedStringKey(group.nameKey)).font(.subheadline).foregroundStyle(Color.hsSecondary)
                 }
                 Text(LocalizedStringKey(reduceMotion ? "sky.stillHint" : "sky.hint"))
@@ -187,8 +187,7 @@ struct ConstellationView: View {
         if shown { camera.stop() } else if cameraWanted { startCameraIfVisible() }
     }
     private var chartPose: SkyPose? {
-        guard let live = model.skyPose else { return nil }
-        guard reduceMotion, let target = model.selectedObservation else { return live }
-        return SkyPose(aim: .init(azimuthDegrees: target.azimuthDegrees, altitudeDegrees: target.altitudeDegrees))
+        SkyChartPose.resolve(reduceMotion: reduceMotion, selection: model.skySelection,
+                             observations: model.observations, livePose: model.skyPose)
     }
 }

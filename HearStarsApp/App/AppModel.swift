@@ -8,7 +8,8 @@ import UIKit
 final class AppModel: ObservableObject {
     @Published var route: AppRoute = .picker
     @Published var guidanceMode: GuidanceMode = .sound
-    @Published var selectedStarID: String = StarCatalog.prototype[0].id
+    @Published private var skyTargets = SkyGuideSession(starID: StarCatalog.prototype[0].id)
+    var selectedStarID: String { skyTargets.guidanceStarID }
     @Published var isPractice = false
     @Published var simulatorEnabled = false
     @Published private(set) var observations: [String: HorizontalCoordinate] = [:]
@@ -19,7 +20,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var simulatedAim = DeviceAim(azimuthDegrees: 0, altitudeDegrees: 20)
     @Published private(set) var skyAlignment: SkyAlignment?
     @Published private(set) var skyReturnRoute: AppRoute = .discovery
-    @Published private(set) var skySelection: SkySelection = .star("polaris")
+    var skySelection: SkySelection { skyTargets.selection }
     private var alignmentReference: HeadingReference?
     private var observationSchedule = SkyObservationSchedule()
 
@@ -79,14 +80,13 @@ final class AppModel: ObservableObject {
     }
     func selectSkyTarget(_ selection: SkySelection) {
         clearSkyAlignment()
-        skySelection = selection
-        if let anchor = skyGuideStar { selectedStarID = anchor.id }
+        skyTargets.select(selection, resolvedStarID: SkySelectionResolver.star(for: selection, observations: observations)?.id)
     }
     func browseSky() { showConstellation() }
     func guideToSkyTarget() {
         guard let target = skyGuideStar else { return }
         if isPractice {
-            clearDirectionDiagnostics(); selectedStarID = target.id; enterFinder(); refresh()
+            clearDirectionDiagnostics(); skyTargets.beginGuidance(starID: target.id); enterFinder(); refresh()
         } else { startFinding(target, selectedTarget: skySelection) }
     }
 
@@ -122,6 +122,7 @@ final class AppModel: ObservableObject {
     func clearSkyAlignment() { skyAlignment = nil; alignmentReference = nil }
 
     func leaveSky() {
+        skyTargets.cancelSelection()
         if skyReturnRoute == .finder { clearDirectionDiagnostics(); enterFinder(); refresh() }
         else if skyReturnRoute == .picker { returnToPicker() }
         else { returnToDiscovery() }
@@ -130,7 +131,7 @@ final class AppModel: ObservableObject {
     func findNextSkyStar() {
         guard let next = nextSkyStar else { returnToPicker(); return }
         if isPractice {
-            clearDirectionDiagnostics(); selectedStarID = next.id; skySelection = .star(next.id); enterFinder(); refresh()
+            clearDirectionDiagnostics(); skyTargets.beginGuidance(starID: next.id, selection: .star(next.id)); enterFinder(); refresh()
         } else { startFinding(next) }
     }
 
@@ -202,8 +203,7 @@ final class AppModel: ObservableObject {
     }
 
     func select(_ star: Star) {
-        selectedStarID = star.id
-        skySelection = .star(star.id)
+        skyTargets.beginGuidance(starID: star.id, selection: .star(star.id))
         refresh()
     }
 
@@ -212,8 +212,7 @@ final class AppModel: ObservableObject {
         stopPulses()
         isPractice = false
         simulatorEnabled = false
-        selectedStarID = star.id
-        skySelection = selectedTarget ?? .star(star.id)
+        skyTargets.beginGuidance(starID: star.id, selection: selectedTarget ?? .star(star.id))
         holdTracker.reset()
         nextPulseAt = .distantPast
         lastAnnouncedBand = nil

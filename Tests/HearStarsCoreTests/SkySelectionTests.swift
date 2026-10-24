@@ -6,6 +6,48 @@ final class SkySelectionTests: XCTestCase {
     private func h(_ altitude: Double) -> HorizontalCoordinate {
         .init(azimuthDegrees: 0, altitudeDegrees: altitude, localHourAngleDegrees: 0)
     }
+    func testBrowsingAndBackKeepActiveGuideUntilExplicitGuideAction() {
+        var session = SkyGuideSession(starID: "polaris")
+        session.select(.constellation("ori"), resolvedStarID: "rigel")
+        XCTAssertEqual(session.selection, .constellation("ori"))
+        XCTAssertEqual(session.guidanceStarID, "polaris", "A chart tap must not retarget pulses")
+        session.cancelSelection()
+        XCTAssertEqual(session.guidanceStarID, "polaris")
+        XCTAssertEqual(session.selection, .star("polaris"), "Back must restore the active target's title")
+        session.select(.constellation("ori"), resolvedStarID: "rigel")
+        session.beginGuidance(starID: "rigel")
+        XCTAssertEqual(session.guidanceStarID, "rigel")
+        XCTAssertEqual(session.selection, .constellation("ori"))
+        session.select(.star("vega"), resolvedStarID: "vega")
+        session.cancelSelection()
+        XCTAssertEqual(session.guidanceStarID, "rigel")
+        XCTAssertEqual(session.selection, .constellation("ori"))
+    }
+    func testReducedMotionChartWorksWithoutLiveDirectionAndAvoidsUndergroundPolaris() throws {
+        let observations = ["polaris": h(-35), "sirius": h(30), "rigel": h(10)]
+        let livePoses: [SkyPose?] = [nil, SkyPose(aim: .init(azimuthDegrees: 180, altitudeDegrees: -35))]
+        for live in livePoses {
+            let pose = try XCTUnwrap(SkyChartPose.resolve(reduceMotion: true, selection: .star("polaris"),
+                observations: observations, livePose: live))
+            let point = try XCTUnwrap(SkyProjection.project(h(30), pose: pose, viewport: viewport))
+            XCTAssertEqual(point.x, 0.5, accuracy: 1e-9)
+            XCTAssertEqual(point.y, 0.5, accuracy: 1e-9)
+        }
+    }
+    func testReducedMotionCentersVisibleSelectionButNeedsRealObservations() throws {
+        let pose = try XCTUnwrap(SkyChartPose.resolve(reduceMotion: true, selection: .star("vega"),
+            observations: ["vega": h(60), "sirius": h(30)], livePose: nil))
+        XCTAssertEqual(pose, SkyPose(aim: .init(azimuthDegrees: 0, altitudeDegrees: 60)))
+        XCTAssertNil(SkyChartPose.resolve(reduceMotion: true, selection: .star("polaris"),
+            observations: [:], livePose: pose))
+    }
+    func testLiveChartStillRequiresLivePose() {
+        let live = SkyPose(aim: .init(azimuthDegrees: 120, altitudeDegrees: 45))
+        XCTAssertEqual(SkyChartPose.resolve(reduceMotion: false, selection: .star("polaris"),
+            observations: ["polaris": h(-35)], livePose: live), live)
+        XCTAssertNil(SkyChartPose.resolve(reduceMotion: false, selection: .star("polaris"),
+            observations: ["sirius": h(30)], livePose: nil))
+    }
     func testTapPicksNearestRealRenderedCandidateWithinFriendlyRadius() {
         let dots = [SkyPickCandidate(.star("a"), at: .init(x: 0.5, y: 0.5)),
                     SkyPickCandidate(.star("b"), at: .init(x: 0.55, y: 0.5))]
