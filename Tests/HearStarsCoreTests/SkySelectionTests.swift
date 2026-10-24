@@ -23,6 +23,14 @@ final class SkySelectionTests: XCTestCase {
         let observations = ["rigel": h(30), "betelgeuse": h(20), "bellatrix": h(40)]
         XCTAssertEqual(SkySelectionResolver.star(for: .constellation("ori"), observations: observations)?.id, "rigel")
     }
+    func testWholeRenderedLabelIsSelectableInsteadOfUnrelatedDotBehindItsText() {
+        let candidates = [SkyPickCandidate(.star("behind"), at: .init(x: 0.62, y: 0.5)),
+            SkyPickCandidate(.constellation("ori"), at: .init(x: 0.5, y: 0.5), priority: 2,
+                             hitWidthPoints: 120, hitHeightPoints: 44)]
+        XCTAssertEqual(SkyPicking.nearest(to: .init(x: 0.62, y: 0.5), candidates: candidates, viewport: viewport),
+                       .constellation("ori"))
+        XCTAssertNil(SkyPicking.nearest(to: .init(x: 0.9, y: 0.5), candidates: candidates, viewport: viewport))
+    }
     func testConstellationSkipsLowHorizonAndReturnsNilForInvisibleOrUnknownFigure() {
         let observations = ["rigel": h(4.99), "betelgeuse": h(20), "bellatrix": h(-5)]
         XCTAssertEqual(SkySelectionResolver.star(for: .constellation("ori"), observations: observations)?.id, "betelgeuse")

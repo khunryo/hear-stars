@@ -8,8 +8,12 @@ public struct SkyPickCandidate: Equatable, Sendable {
     public let selection: SkySelection
     public let position: SkyPoint
     public let priority: Int
-    public init(_ selection: SkySelection, at position: SkyPoint, priority: Int = 0) {
+    public let hitWidthPoints: Double?
+    public let hitHeightPoints: Double?
+    public init(_ selection: SkySelection, at position: SkyPoint, priority: Int = 0,
+                hitWidthPoints: Double? = nil, hitHeightPoints: Double? = nil) {
         self.selection = selection; self.position = position; self.priority = priority
+        self.hitWidthPoints = hitWidthPoints; self.hitHeightPoints = hitHeightPoints
     }
 }
 public enum SkyPicking {
