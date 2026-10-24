@@ -67,6 +67,7 @@ public struct SkyViewport: Equatable, Sendable {
 public struct SkyPoint: Equatable, Sendable {
     public let x: Double
     public let y: Double
+    public init(x: Double, y: Double) { self.x = x; self.y = y }
 }
 public enum SkyProjection {
     public static func project(_ target: HorizontalCoordinate, pose: SkyPose, viewport: SkyViewport) -> SkyPoint? {

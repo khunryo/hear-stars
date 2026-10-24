@@ -1,0 +1,40 @@
+{
+  "retrieved": "2026-10-24T00:34:37.676629+00:00",
+  "files": {
+    "YaleBrightStarCatalog-bsc5-orig.json.gz": {
+      "url": "https://raw.githubusercontent.com/brettonw/YaleBrightStarCatalog/abffb3b7223ae37e879b0a3ff5b49ad06aed5576/bsc5-orig.json",
+      "sha256": "28cb835cbd2d72ced9ef9d20d9b5d92f05f649dfd39a509b1cf82dbd3c5f2fb9",
+      "bytes": 4675077
+    },
+    "YaleBrightStarCatalog-LICENSE.gz": {
+      "url": "https://raw.githubusercontent.com/brettonw/YaleBrightStarCatalog/abffb3b7223ae37e879b0a3ff5b49ad06aed5576/LICENSE",
+      "sha256": "d719759c9933b999867544a0d2b801d3f1ea6909523a2bc92f2be64d8f1838cb",
+      "bytes": 1069
+    },
+    "YaleBrightStarCatalog-README.md.gz": {
+      "url": "https://raw.githubusercontent.com/brettonw/YaleBrightStarCatalog/abffb3b7223ae37e879b0a3ff5b49ad06aed5576/README.md",
+      "sha256": "13b220b3f9ada44fa1210986a37fc066686a4edbdc849f935948ac2ab5b1bab9",
+      "bytes": 14537
+    },
+    "d3-celestial-data-constellations.lines.json.gz": {
+      "url": "https://raw.githubusercontent.com/ofrohn/d3-celestial/7e720a3de062059d4c5400a379146a601d9010e0/data/constellations.lines.json",
+      "sha256": "294f66bef5d5cf50b1e17f16d2efa1d97a15131612c68dd935adef6e7373e13c",
+      "bytes": 27136
+    },
+    "d3-celestial-data-constellations.json.gz": {
+      "url": "https://raw.githubusercontent.com/ofrohn/d3-celestial/7e720a3de062059d4c5400a379146a601d9010e0/data/constellations.json",
+      "sha256": "ab4ae692027cbc042c0d6791a84456a65eb7c55656107fd00c58ff6e55d4d8b2",
+      "bytes": 50581
+    },
+    "d3-celestial-LICENSE.gz": {
+      "url": "https://raw.githubusercontent.com/ofrohn/d3-celestial/7e720a3de062059d4c5400a379146a601d9010e0/LICENSE",
+      "sha256": "a8c79239001ad4bea243d1796b85084e1fc39309c5c5a663930a1b46320254c6",
+      "bytes": 1480
+    },
+    "d3-celestial-readme.md.gz": {
+      "url": "https://raw.githubusercontent.com/ofrohn/d3-celestial/7e720a3de062059d4c5400a379146a601d9010e0/readme.md",
+      "sha256": "c3d77ea7e64565a31876cd2be3c2bc71919712e0379ecd1d98b490afc68703e2",
+      "bytes": 40558
+    }
+  }
+}

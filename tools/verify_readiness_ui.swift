@@ -161,7 +161,8 @@ struct VerifyReadinessUI {
             let observations = Dictionary(uniqueKeysWithValues: SkyCatalog.stars.map {
                 ($0.id, AstronomyCalculator.horizontalCoordinate(for: $0, at: date, observer: observer))
             })
-            for star in SkyCatalog.stars {
+            precondition(SkyCatalog.catalogIsExpanded && SkyCatalog.constellations.count == 88)
+            for star in SkyCatalog.stars where star.nameKey.hasPrefix("star.") || star.nameKey.hasPrefix("skyStar.") {
                 precondition(L10n.string(star.nameKey, bundle: bundle) != star.nameKey)
             }
             for group in SkyCatalog.constellations {

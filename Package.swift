@@ -10,7 +10,8 @@ let package = Package(
     targets: [
         .target(
             name: "HearStarsCore",
-            path: "Sources/HearStarsCore"
+            path: "Sources/HearStarsCore",
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "HearStarsCoreTests",

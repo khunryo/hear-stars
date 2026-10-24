@@ -55,7 +55,7 @@ jobs:
           xcodegen generate
 
       - name: Test compass timing and readiness regressions first
-        run: swift test --filter 'SkyProjectionTests|SkyCatalogTests|HeadingAssessmentTests|DirectionReadinessTests'
+        run: swift test --filter 'ExpandedSkyTests|SkySelectionTests|SkyProjectionTests|SkyCatalogTests|HeadingAssessmentTests|DirectionReadinessTests'
 
       - name: Test astronomy and direction readiness
         run: swift test
@@ -95,6 +95,7 @@ jobs:
             HearStarsApp/Components/SkyField.swift \
             tools/verify_readiness_ui.swift \
             -o build/verify-readiness-ui
+          cp Sources/HearStarsCore/Resources/* build/
           build/verify-readiness-ui "$APP_PATH" build/readiness-ui
 
       - name: Package IPA for Sideloadly

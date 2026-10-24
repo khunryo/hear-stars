@@ -17,6 +17,10 @@ targets:
     platform: iOS
     sources:
       - path: Sources/HearStarsCore
+        excludes:
+          - Resources
+      - path: Sources/HearStarsCore/Resources
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.HearStarsCore

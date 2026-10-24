@@ -6,8 +6,8 @@ final class SkyCatalogTests: XCTestCase {
         .init(azimuthDegrees: azimuth, altitudeDegrees: altitude, localHourAngleDegrees: 0)
     }
     func testCatalogHasUniqueFiniteStarsAndPreservesOriginalFive() {
-        XCTAssertEqual(SkyCatalog.stars.count, 31)
-        XCTAssertEqual(Set(SkyCatalog.stars.map(\.id)).count, 31)
+        XCTAssertGreaterThanOrEqual(SkyCatalog.stars.count, 5_000)
+        XCTAssertEqual(Set(SkyCatalog.stars.map(\.id)).count, SkyCatalog.stars.count)
         for original in StarCatalog.prototype {
             XCTAssertTrue(SkyCatalog.stars.contains { $0.id == original.id && $0.j2000 == original.j2000 })
         }
@@ -19,7 +19,7 @@ final class SkyCatalogTests: XCTestCase {
     }
     func testOriginalConnectionsHaveRealEndpointsInTheirOwnGroup() {
         let ids = Set(SkyCatalog.stars.map(\.id))
-        XCTAssertEqual(SkyCatalog.constellations.count, 6)
+        XCTAssertEqual(SkyCatalog.constellations.count, 88)
         for group in SkyCatalog.constellations {
             XCTAssertTrue(Set(group.starIDs).isSubset(of: ids))
             for (a, b) in group.links {
